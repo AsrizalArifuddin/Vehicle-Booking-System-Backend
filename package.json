@@ -1,0 +1,14 @@
+{
+  "name": "vehicle-booking-system-backend",
+  "version": "1.0.0",
+  "description": "Backend for Vehicle booking system",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Billion Prima Sdn Bhd",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
