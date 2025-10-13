@@ -1,8 +1,8 @@
 const tokenStore = {};
 
 module.exports = {
-    set: (token, { email, contact_no, expiry }) => {
-        tokenStore[token] = { email, contact_no, expiry };
+    set: (token, { email, account_type, expiry }) => {
+        tokenStore[token] = { email, account_type, expiry };
     },
     get: (token) => {
         return tokenStore[token];

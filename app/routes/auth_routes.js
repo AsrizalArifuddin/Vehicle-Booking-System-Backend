@@ -12,6 +12,7 @@ module.exports = function(app) {
     });
 
     // Authentication routes
+    app.post("/api/auth/signup", controller.registerUser);
     app.post("/api/auth/signin", controller.signin);
     app.get("/api/auth/signout", authJwt.verifyToken, controller.signout);
 
