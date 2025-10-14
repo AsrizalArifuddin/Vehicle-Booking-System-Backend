@@ -1,3 +1,5 @@
+//Reference Only - May use in future
+
 const { authJwt } = require("../middleware");
 const controller = require("../controllers/board_controller");
 

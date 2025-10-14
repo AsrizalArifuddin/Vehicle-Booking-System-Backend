@@ -23,6 +23,7 @@ db.UserAccount = require("./user_account.js")(sequelize, Sequelize);
 db.Agent = require("./agent.js")(sequelize, Sequelize);
 db.Company = require("./company.js")(sequelize, Sequelize);
 db.UserNotification = require("./user_notification.js")(sequelize, Sequelize);
+db.Driver = require("./driver")(sequelize, Sequelize);
 
 // Define associations
 db.PortAccount.hasMany(db.PortNotification, {
@@ -63,6 +64,16 @@ db.UserAccount.hasOne(db.UserNotification, {
 db.UserNotification.belongsTo(db.UserAccount, {
     foreignKey: "user_account_id",
     as: "user"
+});
+
+db.UserAccount.hasMany(db.Driver, {
+    foreignKey: "user_account_id",
+    as: "drivers"
+});
+
+db.Driver.belongsTo(db.UserAccount, {
+    foreignKey: "user_account_id",
+    as: "owner"
 });
 
 module.exports = db;

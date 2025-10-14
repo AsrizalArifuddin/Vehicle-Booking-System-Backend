@@ -31,9 +31,11 @@ app.get('/', (req, res) => {
 
 // routes
 require('./app/routes/auth_routes')(app);
-require('./app/routes/board_routes')(app);
+require('./app/routes/board_routes')(app); //Reference only, may use in future
 require('./app/routes/port_routes')(app);
 require('./app/routes/approval_routes')(app);
+require('./app/routes/user_routes')(app);
+require('./app/routes/driver_routes')(app);
 
 // Start the server
 app.listen(port, () => {

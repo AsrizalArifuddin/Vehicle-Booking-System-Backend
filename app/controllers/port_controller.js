@@ -233,7 +233,18 @@ exports.searchPortAccount = async (req, res) => {
             return res.status(200).send({ message: "No matching port accounts found for the given keyword." });
         }
 
-        res.status(200).send({ message: "Search completed.", data: results });
+        // Map role values to readable labels
+        const mappedResults = results.map(account => {
+            const plain = account.get({ plain: true });
+            plain.port_account_role =
+                plain.port_account_role === 1 ? "Staff" :
+                plain.port_account_role === 2 ? "Admin" :
+                plain.port_account_role === 3 ? "Superadmin" :
+                "Unknown";
+            return plain;
+        });
+
+        res.status(200).send({ message: "Search completed.", data: mappedResults });
     } catch (err) {
         res.status(500).send({ message: "Error searching port accounts.", error: err.message });
     }
@@ -254,7 +265,16 @@ exports.viewPortAccount = async (req, res) => {
             return res.status(404).send({ message: "Port account not found." });
         }
 
-        res.status(200).send({ message: "Port account details retrieved successfully.", data: account });
+        // Convert to plain object and map role
+        const plain = account.get({ plain: true });
+
+        plain.port_account_role =
+            plain.port_account_role === 1 ? "Staff" :
+            plain.port_account_role === 2 ? "Admin" :
+            plain.port_account_role === 3 ? "Superadmin" :
+            "Unknown";
+
+        res.status(200).send({ message: "Port account details retrieved successfully.", data: plain });
     } catch (err) {
         res.status(500).send({ message: "Error retrieving account details.", error: err.message });
     }
@@ -275,7 +295,16 @@ exports.viewAccountProfile = async (req, res) => {
             return res.status(404).send({ message: "Your account profile could not be found." });
         }
 
-        res.status(200).send({ message: "Your account profile retrieved successfully.", data: account });
+        // Convert to plain object and map role
+        const plain = account.get({ plain: true });
+
+        plain.port_account_role =
+            plain.port_account_role === 1 ? "Staff" :
+            plain.port_account_role === 2 ? "Admin" :
+            plain.port_account_role === 3 ? "Superadmin" :
+            "Unknown";
+
+        res.status(200).send({ message: "Your account profile retrieved successfully.", data: plain });
     } catch (err) {
         res.status(500).send({ message: "Error retrieving your profile.", error: err.message });
     }

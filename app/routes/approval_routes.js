@@ -10,10 +10,13 @@ module.exports = function(app) {
         next();
     });
 
+    // Get pending registration
     app.get(
         "/api/approval/pending",
         [authJwt.verifyToken, authJwt.isPortAccount],
         ApprovalController.getPendingUsers);
+
+    // Registration Approval
     app.post(
         "/api/approval/decision",
         [authJwt.verifyToken, authJwt.isPortAccount],
