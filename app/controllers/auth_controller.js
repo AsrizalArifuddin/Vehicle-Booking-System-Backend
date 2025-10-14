@@ -1,11 +1,11 @@
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
-const crypto = require("crypto");
-const nodemailer = require("nodemailer");
+const notificationService = require("../services/sendNotification");
 const resetStore = require("../services/resetTokenStore");
 const db = require("../models");
 const config = require("../config/auth_config");
-//const twilio = require("twilio");
+
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
 const { Op } = require("sequelize");
 
 const UserAccount = db.UserAccount;
@@ -14,22 +14,6 @@ const Company = db.Company;
 //const UserNotification = db.UserNotification;
 //const PortNotification = db.PortNotification;
 const PortAccount = db.PortAccount;
-
-const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-        user: "eddykoh2003@gmail.com",
-        pass: "izhx twka tvsb qomb"
-    }
-});
-
-// Keep aside first
-// const twilioClient = twilio(
-//     process.env.TWILIO_ACCOUNT_SID,
-//     process.env.TWILIO_AUTH_TOKEN
-// );
-
-// const whatsappFrom = process.env.TWILIO_WHATSAPP_FROM || "whatsapp:+14155238886";
 
 // User Registration
 exports.registerUser = async (req, res) => {
@@ -163,30 +147,9 @@ exports.registerUser = async (req, res) => {
         //     pn_status: 0
         // });
 
-        // Helper to send notification email
-        const sendEmail = async (subject, message) => {
-            if (!account_email) return;
-            await transporter.sendMail({
-                to: account_email,
-                subject,
-                html: `<p>${message}</p>`
-            });
-        };
-
-        // Helper: send WhatsApp notification // Keep aside first
-        // const sendWhatsApp = async (message) => {
-        //     if (!contact_no) return;
-        //     const to = `whatsapp:+${contact_no.replace(/^0/, "60")}`; // Convert to international format
-        //     await twilioClient.messages.create({
-        //         from: whatsappFrom,
-        //         to,
-        //         body: message
-        //     });
-        // };
-
         // Send email and WhatsApp
-        await sendEmail("Registration Submitted", "Your registration is pending approval.");
-        // await sendWhatsApp("Your registration has been submitted, waiting for approval");  //Keep aside first
+        await notificationService.sendEmail(account_email, "Registration Submitted", "Your registration is pending approval.");
+        // await notificationService.sendWhatsApp(contact_no, "Your registration has been submitted, waiting for approval");  //Keep aside first
 
         return res.status(201).send({ message: "Registration successful. Awaiting approval." });
     } catch (err) {
@@ -348,12 +311,7 @@ exports.requestReset = async (req, res) => {
 
     const resetLink = `http://localhost:8080/api/auth/reset-password/${token}`;
 
-    await transporter.sendMail({
-        to: email,
-        subject: "Password Reset",
-        html: `<p>Click <a href="${resetLink}">here</a> to reset your password. This link expires in 15 minutes.</p>`
-    });
-
+    await notificationService.sendEmail(email, `Password Reset`, `Click <a href="${resetLink}">here</a> to reset your password. This link expires in 15 minutes.`);
     res.send({ message: "Reset link sent to your email." });
 };
 
@@ -371,33 +329,13 @@ exports.resetPassword = async (req, res) => {
 
     const email = entry?.email;
     const account_type = entry?.account_type;
-
-    // Helper to send notification email
-    const sendEmail = async (subject, message) => {
-        if (!email) return;
-        await transporter.sendMail({
-            to: email,
-            subject,
-            html: `<p>${message}</p>`
-        });
-    };
-
-    // Helper: send WhatsApp notification   //Keep aside first
-    // const sendWhatsApp = async (message) => {
-    //     if (!contact_no) return;
-    //     const to = `whatsapp:+${contact_no.replace(/^0/, "60")}`; // Convert to international format
-    //     await twilioClient.messages.create({
-    //         from: whatsappFrom,
-    //         to,
-    //         body: message
-    //     });
-    // };
+    //const contact_no = entry?.contact_no;
 
     try {
         // Validate token
         if (!entry || entry.expiry < Date.now()) {
-            await sendEmail("Password Reset Attempt Failed", "Your password reset link was invalid or expired.");
-            //await sendWhatsApp("Password reset failed: invalid or expired link."); //Keep aside first
+            await notificationService.sendEmail(email, "Password Reset Attempt Failed", "Your password reset link was invalid or expired.");
+            //await notificationService.sendWhatsApp(contact_no, "Password reset failed: invalid or expired link."); //Keep aside first
             return res.status(400).send({ message: "Invalid or expired token." });
         }
 
@@ -407,8 +345,8 @@ exports.resetPassword = async (req, res) => {
             // Find account by email - Port Account first
             account = await PortAccount.findOne({ where: { port_account_email: email } });
             if (!account) {
-                await sendEmail("Password Reset Attempt Failed", "Your port account could not be found.");
-                // await sendWhatsApp("Password reset failed: account not found.");  //Keep aside first
+                await notificationService.sendEmail(email, "Password Reset Attempt Failed", "Your port account could not be found.");
+                // await notificationService.sendWhatsApp(contact_no, "Password reset failed: account not found.");  //Keep aside first
                 return res.status(404).send({ message: "Account not found." });
             }
 
@@ -419,8 +357,8 @@ exports.resetPassword = async (req, res) => {
             account = await UserAccount.findOne({ where: { account_email: email } });
 
             if (!account) {
-                await sendEmail("Password Reset Attempt Failed", "Your user account could not be found.");
-                // await sendWhatsApp("Password reset failed: account not found.");  //Keep aside first
+                await notificationService.sendEmail(email, "Password Reset Attempt Failed", "Your user account could not be found.");
+                // await notificationService.sendWhatsApp(contact_no, "Password reset failed: account not found.");  //Keep aside first
                 return res.status(404).send({ message: "Account not found." });
             }
 
@@ -432,13 +370,13 @@ exports.resetPassword = async (req, res) => {
         resetStore.remove(token); // Invalidate token
 
         // Send Success Notification
-        await sendEmail("Password Reset Successful", "Your password has been reset successfully.");
-        //await sendWhatsApp("Your password has been reset successfully.");  //Keep aside first
+        await notificationService.sendEmail(email, "Password Reset Successful", "Your password has been reset successfully.");
+        //await notificationService.sendWhatsApp(contact_no, "Your password has been reset successfully.");  //Keep aside first
         res.send({ message: "Password has been reset successfully." });
     } catch (err) {
         // Send Failed Notification
-        await sendEmail("Password Reset Attempt Failed", "An error occurred during your password reset attempt.");
-        //await sendWhatsApp("Password reset failed due to a system error."); //Keep aside first
+        await notificationService.sendEmail(email, "Password Reset Attempt Failed", "An error occurred during your password reset attempt.");
+        //await notificationService.sendWhatsApp(contact_no, "Password reset failed due to a system error."); //Keep aside first
         res.status(500).send({ message: "Error resetting password.", error: err.message });
     }
 };

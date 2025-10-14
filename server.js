@@ -1,4 +1,4 @@
-// require("dotenv").config();   //Keep aside first
+// require("dotenv").config();   //Keep aside first - For WhatsApp
 
 const express = require("express");
 const cors = require("cors");
@@ -36,6 +36,7 @@ require('./app/routes/port_routes')(app);
 require('./app/routes/approval_routes')(app);
 require('./app/routes/user_routes')(app);
 require('./app/routes/driver_routes')(app);
+require('./app/routes/booking_routes')(app);
 
 // Start the server
 app.listen(port, () => {

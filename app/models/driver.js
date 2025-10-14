@@ -32,7 +32,7 @@ module.exports = (sequelize, DataTypes) => {
         }
     }, {
         tableName: "driver",
-        timestamps: false,
+        timestamps: false
     });
 
     return Driver;

@@ -1,18 +1,10 @@
 const db = require("../models");
-const nodemailer = require("nodemailer");
+const notificationService = require("../services/sendNotification");
 
 const UserAccount = db.UserAccount;
 //const UserNotification = db.UserNotification;
 
-const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-        user: "eddykoh2003@gmail.com",
-        pass: "izhx twka tvsb qomb"
-    }
-});
-
-// Keep aside first //Need to make change if needed
+// Keep aside first - For send WhatsApp
 // async function getContactNo(user) {
 //     if (user.account_type === 0) {
 //         const agent = await db.Agent.findOne({ where: { user_account_id: user.user_account_id } });
@@ -105,16 +97,13 @@ exports.processDecision = async (req, res) => {
         //     un_status: 0
         // });
 
-        // Send email
-        await transporter.sendMail({
-            to: user.account_email,
-            subject: `Registration ${statusText}`,
-            html: `<p>Your registration has been ${statusText} by the port officer.</p>`
-        });
+        await notificationService.sendEmail(user.account_email,
+            `Registration ${statusText}`,
+            `Your registration has been ${statusText} by the port officer.`);
 
-        // Send WhatsApp notification // Keep aside first  //need to make change
-        // const contact_no = await getContactNo(user); // You can fetch from Agent or Company
-        // sendWhatsApp(contact_no, `Your registration has been ${statusText}.`);
+        // Send WhatsApp notification // Keep aside first
+        // const contact_no = await getContactNo(user); //fetch from Agent or Company
+        // await notificationService.sendWhatsApp(contact_no, `Your registration has been ${statusText}.`);
 
         res.status(200).send({ message: `User successfully ${statusText}.` });
     } catch (err) {
