@@ -6,60 +6,22 @@ const PortAccount = db.PortAccount;
 
 // Add Port Account
 exports.addPortAccount = async (req, res) => {
-    // Extract data from request body
-    const {
-        port_account_username,
-        port_account_email,
-        port_account_password,
-        port_contact_no,
-        port_account_role
-    } = req.body;
-
     try {
-        // Check requester's role
-        const requesterRole = req.user?.port_account_role;
+        // Extract data from request body
+        const {
+            port_account_username,
+            port_account_email,
+            port_account_password,
+            port_contact_no,
+            port_account_role
+        } = req.body;
 
-        // Only allow admin and superadmin to create port accounts
-        if (![2, 3].includes(requesterRole)) {
-            return res.status(403).send({ message: "Unauthorized: Only admin or superadmin can create port accounts." });
+        if (!port_account_username || !port_account_email || !port_account_password
+            || !port_contact_no || port_account_role === undefined) {
+            return res.status(400).send({ message: "All fields are required." });
         }
 
-        // Check for duplicate username
-        const existingName = await PortAccount.findOne({ where: { port_account_username } });
-        if (existingName) {
-            return res.status(400).send({ message: "Username already exists." });
-        }
-
-        // Check for duplicate email
-        const existingEmail = await PortAccount.findOne({ where: { port_account_email } });
-        if (existingEmail) {
-            return res.status(400).send({ message: "Email already exists." });
-        }
-
-        // Validate username length
-        if (port_account_username && port_account_username.length > 20) {
-            return res.status(400).send({ message: "Username must not exceed 20 characters." });
-        }
-
-        // Validate email format
-        if (port_account_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(port_account_email)) {
-            return res.status(400).send({ message: "Invalid email format." });
-        }
-
-        // Validate password length
-        if (port_account_password && port_account_password.length < 6) {
-            return res.status(400).send({ message: "Password must be at least 6 characters long." });
-        }
-
-        // Validate contact number (basic check: digits only, 8–15 characters)
-        if (port_contact_no && !/^\d{8,15}$/.test(port_contact_no)) {
-            return res.status(400).send({ message: "Invalid contact number format." });
-        }
-
-        // Validate role value
-        if (port_account_role !== undefined && ![1, 2, 3].includes(port_account_role)) {
-            return res.status(400).send({ message: "Invalid role value. Must be 1, 2 or 3." });
-        }
+        // Input validation is in middleware/verifyInput
 
         // Hash password
         const hashedPassword = bcrypt.hashSync(port_account_password, 8);
@@ -81,76 +43,25 @@ exports.addPortAccount = async (req, res) => {
 
 // Update Port Account
 exports.updatePortAccount = async (req, res) => {
-    const accountIdToUpdate = req.params.id;
-
-    // Extract data from request body
-    const {
-        port_account_username,
-        port_account_email,
-        port_account_password,
-        port_contact_no,
-        port_account_role
-    } = req.body;
-
     try {
-        // Check requester's role
-        const requesterRole = req.user?.port_account_role;
-        if (![2, 3].includes(requesterRole)) {
-            return res.status(403).send({ message: "Unauthorized: Only admin or superadmin can update port accounts." });
-        }
-
-        // Account not found
-        const account = await PortAccount.findByPk(accountIdToUpdate);
-        if (!account) {
-            return res.status(404).send({ message: "Port account not found." });
-        }
+        const accountId = req.params.id;
+        // Extract data from request body
+        const {
+            port_account_username,
+            port_account_email,
+            port_account_password,
+            port_contact_no,
+            port_account_role
+        } = req.body;
 
         // Optional: prevent username change (if needed)
         // if (port_account_username && port_account_username !== account.port_account_username) {
         //      return res.status(400).send({ message: "Username cannot be changed." });
         // }
 
-        if (port_account_username){
-            // Check for duplicate username
-            const existingName = await PortAccount.findOne({ where: { port_account_username } });
-            if (existingName) {
-                return res.status(400).send({ message: "Username already exists." });
-            }
-        }
+        // Input validation is in middleware/verifyInput
 
-        // Validate username length
-        if (port_account_username && port_account_username.length > 20) {
-            return res.status(400).send({ message: "Username must not exceed 20 characters." });
-        }
-
-        if (port_account_email){
-            // Check for duplicate email
-            const existingEmail = await PortAccount.findOne({ where: { port_account_email } });
-            if (existingEmail) {
-                return res.status(400).send({ message: "Email already exists." });
-            }
-        }
-
-        // Validate email format
-        if (port_account_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(port_account_email)) {
-            return res.status(400).send({ message: "Invalid email format." });
-        }
-
-        // Validate password length
-        if (port_account_password && port_account_password.length < 6) {
-            return res.status(400).send({ message: "Password must be at least 6 characters long." });
-        }
-
-        // Validate contact number (basic check: digits only, 8–15 characters)
-        if (port_contact_no && !/^\d{8,15}$/.test(port_contact_no)) {
-            return res.status(400).send({ message: "Invalid contact number format." });
-        }
-
-        // Validate role value
-        if (port_account_role !== undefined && ![1, 2, 3].includes(port_account_role)) {
-            return res.status(400).send({ message: "Invalid role value. Must be 1, 2 or 3." });
-        }
-
+        const account = await PortAccount.findByPk(accountId);
         // Update fields if provided
         if (port_account_username) account.port_account_username = port_account_username;
         if (port_account_email) account.port_account_email = port_account_email;
@@ -169,25 +80,13 @@ exports.updatePortAccount = async (req, res) => {
 
 // Delete Port Account
 exports.deletePortAccount = async (req, res) => {
-    const accountIdToDelete = parseInt(req.params.id);
-    const requesterId = req.accountId;
-    const requesterRole = req.user?.port_account_role;
-
     try {
-        // Only allow admin and superadmin to delete
-        if (![2, 3].includes(requesterRole)) {
-            return res.status(403).send({ message: "Unauthorized: Only admin or superadmin can delete port accounts." });
-        }
+        const accountId = parseInt(req.params.id);
+        const account = await PortAccount.findByPk(accountId);
 
         // Prevent self-deletion
-        if (accountIdToDelete === requesterId) {
+        if (accountId === req.accountId) {
             return res.status(403).send({ message: "Unauthorized: You cannot delete your own account." });
-        }
-
-        // Account not found
-        const account = await PortAccount.findByPk(accountIdToDelete);
-        if (!account) {
-            return res.status(404).send({ message: "Port account not found." });
         }
 
         // Delete account
@@ -201,14 +100,8 @@ exports.deletePortAccount = async (req, res) => {
 
 // Search Port Account
 exports.searchPortAccount = async (req, res) => {
-    const requesterRole = req.user?.port_account_role;
-    const { keyword } = req.query;
-
     try {
-        // Only allow admin and superadmin to search
-        if (![2, 3].includes(requesterRole)) {
-            return res.status(403).send({ message: "Unauthorized: Only admin or superadmin can search port accounts." });
-        }
+        const { keyword } = req.query;
 
         // No keyword provided
         if (!keyword || keyword.trim() === "") {
@@ -252,18 +145,12 @@ exports.searchPortAccount = async (req, res) => {
 
 // View Port Account
 exports.viewPortAccount = async (req, res) => {
-    const accountIdToView = req.params.id;
-
     try {
-            const account = await PortAccount.findByPk(accountIdToView, {
+        const accountId = req.params.id;
+        const account = await PortAccount.findByPk(accountId, {
             // Only return these fields
             attributes: ["port_account_username", "port_account_email", "port_contact_no", "port_account_role"]
         });
-
-        // Account not found
-        if (!account) {
-            return res.status(404).send({ message: "Port account not found." });
-        }
 
         // Convert to plain object and map role
         const plain = account.get({ plain: true });
@@ -282,9 +169,8 @@ exports.viewPortAccount = async (req, res) => {
 
 // View Account Profile
 exports.viewAccountProfile = async (req, res) => {
-    const accountId = req.accountId;
-
     try {
+        const accountId = req.accountId;
         const account = await PortAccount.findByPk(accountId, {
             // Only return these fields
             attributes: ["port_account_username", "port_account_email", "port_contact_no", "port_account_role"]
@@ -312,17 +198,17 @@ exports.viewAccountProfile = async (req, res) => {
 
 // Update Account Profile
 exports.updateAccountProfile = async (req, res) => {
-    const accountId = req.accountId;
-    // Extract data from request body
-    const {
-        port_account_username,
-        port_account_email,
-        port_account_password,
-        port_contact_no,
-        port_account_role
-    } = req.body;
-
     try {
+        const accountId = req.accountId;
+        // Extract data from request body
+        const {
+            port_account_username,
+            port_account_email,
+            port_account_password,
+            port_contact_no,
+            port_account_role
+        } = req.body;
+
         // Account not found (should not happen if authenticated)
         const account = await PortAccount.findByPk(accountId);
         if (!account) {
@@ -334,41 +220,7 @@ exports.updateAccountProfile = async (req, res) => {
         //      return res.status(400).send({ message: "Username cannot be changed." });
         // }
 
-        if (port_account_username){
-            // Check for duplicate username
-            const existingName = await PortAccount.findOne({ where: { port_account_username } });
-            if (existingName) {
-                return res.status(400).send({ message: "Username already exists." });
-            }
-        }
-
-        // Validate username length
-        if (port_account_username && port_account_username.length > 20) {
-            return res.status(400).send({ message: "Username must not exceed 20 characters." });
-        }
-
-        if (port_account_email){
-            // Check for duplicate email
-            const existingEmail = await PortAccount.findOne({ where: { port_account_email } });
-            if (existingEmail) {
-                return res.status(400).send({ message: "Email already exists." });
-            }
-        }
-
-        // Validate email format
-        if (port_account_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(port_account_email)) {
-            return res.status(400).send({ message: "Invalid email format." });
-        }
-
-        // Validate password length
-        if (port_account_password && port_account_password.length < 6) {
-            return res.status(400).send({ message: "Password must be at least 6 characters long." });
-        }
-
-        // Validate contact number (digits only, 8–15 characters)
-        if (port_contact_no && !/^\d{8,15}$/.test(port_contact_no)) {
-            return res.status(400).send({ message: "Invalid contact number format." });
-        }
+        // Input validation is in middleware/verifyInput
 
         // Prevent role change
         if (port_account_role && port_account_role !== account.port_account_role) {

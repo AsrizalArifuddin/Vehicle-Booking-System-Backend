@@ -9,74 +9,57 @@ const crypto = require("crypto");
 const { Op } = require("sequelize");
 
 const UserAccount = db.UserAccount;
+const PortAccount = db.PortAccount;
 const Agent = db.Agent;
 const Company = db.Company;
 //const UserNotification = db.UserNotification;
 //const PortNotification = db.PortNotification;
-const PortAccount = db.PortAccount;
 
-// User Registration
+// User Registration - For UserAccount
 exports.registerUser = async (req, res) => {
-    const {
-        account_email,
-        account_password,
-        account_type, // 0 = agent, 1 = company
-        agent_fullname,
-        id_type,
-        id_no,
-        contact_no,
-        address,
-        state,
-        postcode,
-        city,
-        company_name,
-        registration_no,
-        sst_no,
-        attc_registration
-    } = req.body;
-
     try {
+        const {
+            account_email,
+            account_password,
+            account_type, // 0 = agent, 1 = company
+            agent_fullname,
+            id_type,
+            id_no,
+            contact_no,
+            address,
+            state,
+            postcode,
+            city,
+            company_name,
+            registration_no,
+            sst_no,
+            attc_registration
+        } = req.body;
+
         // Basic validation - Need Email, Password and Acc Type
         if (!account_email || !account_password || account_type === undefined) {
             return res.status(400).send({ message: "Email, password, and account type are required." });
         }
 
-        // Account Type must be 0 or 1
-        if (![0, 1].includes(account_type)) {
-            return res.status(400).send({ message: "Invalid account type. Must be 0 (agent) or 1 (company)." });
-        }
-
-        // Check email validity
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(account_email)) {
-            return res.status(400).send({ message: "Invalid email format." });
-        }
-
-        // Check duplicate email
-        const existing = await UserAccount.findOne({ where: { account_email } });
-        if (existing) {
-            return res.status(400).send({ message: "Email already registered." });
-        }
-
-        // Validate password length
-        if (account_password && account_password.length < 6) {
-            return res.status(400).send({ message: "Password must be at least 6 characters long." });
-        }
-
-        const hashedPassword = bcrypt.hashSync(account_password, 8);
-        let user;
-
-        // Conditional creation - Agent
+        // Agent-specific validation
         if (account_type === 0) {
-            // Agent validation
             if (!agent_fullname || id_type === undefined || !id_no || !contact_no || !address || !state || !postcode || !city) {
                 return res.status(400).send({ message: "All agent fields are required." });
             }
+        }
 
-            // Validate contact number (basic check: digits only, 8–15 characters)
-            if (contact_no && !/^\d{8,15}$/.test(contact_no)) {
-                return res.status(400).send({ message: "Invalid contact number format." });
+        // Company-specific validation
+        if (account_type === 1) {
+            if (!company_name || !registration_no || !sst_no || !contact_no || !address || !state || !postcode || !city || !attc_registration) {
+                return res.status(400).send({ message: "All company fields are required." });
             }
+        }
 
+        const hashedPassword = bcrypt.hashSync(account_password, 8); //hash password
+        let user; // For create user
+
+        // Conditional creation - Agent
+        if (account_type === 0) {
             // Create user account
             user = await UserAccount.create({
                 account_email,
@@ -97,16 +80,6 @@ exports.registerUser = async (req, res) => {
                 city
             });
         } else { // Conditional creation - Company
-            // Company validation
-            if (!company_name || !registration_no || !sst_no || !contact_no || !address || !state || !postcode || !city || !attc_registration) {
-                return res.status(400).send({ message: "All company fields are required." });
-            }
-
-            // Validate contact number (basic check: digits only, 8–15 characters)
-            if (contact_no && !/^\d{8,15}$/.test(contact_no)) {
-                return res.status(400).send({ message: "Invalid contact number format." });
-            }
-
             // Create user account
             user = await UserAccount.create({
                 account_email,
@@ -148,8 +121,11 @@ exports.registerUser = async (req, res) => {
         // });
 
         // Send email and WhatsApp
-        await notificationService.sendEmail(account_email, "Registration Submitted", "Your registration is pending approval.");
-        // await notificationService.sendWhatsApp(contact_no, "Your registration has been submitted, waiting for approval");  //Keep aside first
+        await notificationService.sendEmail(account_email,
+            "Registration Submitted",
+            "Your registration is pending approval.");
+        // await notificationService.sendWhatsApp(contact_no,
+        //     "Your registration has been submitted, waiting for approval");  //Keep aside first
 
         return res.status(201).send({ message: "Registration successful. Awaiting approval." });
     } catch (err) {
@@ -157,7 +133,7 @@ exports.registerUser = async (req, res) => {
     }
 };
 
-// Login
+// Login - Both PortAccount and UserAccount
 exports.signin = async (req, res) => {
     try {
         const { identifier, password } = req.body;
@@ -215,14 +191,17 @@ exports.signin = async (req, res) => {
             return res.status(404).send({ message: "Account not found." });
         }
 
-        // Check if account is pending
-        if (account.account_status === 0) {
-            return res.status(403).send({ message: "Your registration is still pending approval by the port officer." });
-        }
-
-        // If account is rejected
-        if (account.account_status === 2) {
-            return res.status(403).send({ message: "Your registration is rejecteed by the port officer." });
+        if(account.account_status !== 1){
+            if (account.account_status === 0) { // Check if account is pending
+                return res.status(403).send({
+                    message: "Your registration is still pending approval by the port officer." });
+            } else if (account.account_status === 2) { // If account is rejected
+                return res.status(403).send({
+                    message: "Your registration is rejected by the port officer." });
+            } else { // If account is deleted
+                return res.status(403).send({
+                    message: "Your registration is deleted by the port officer." });
+            }
         }
 
         const passwordIsValid = bcrypt.compareSync(password, account.account_password);
@@ -255,15 +234,16 @@ exports.signin = async (req, res) => {
     }
 };
 
-// Logout
+// Logout - Both PortAccount and UserAccount
 exports.signout = async (req, res) => {
     try {
+        // Already use token to verify login status - not use already
         // Check if accountId exists
-        if (!req.accountId) {
-            return res.status(401).send({ message: "Unauthorized: You must be signed in to log out." });
-        }
+        // if (!req.accountId) {
+        //     return res.status(401).send({ message: "Unauthorized: You must be signed in to log out." });
+        // }
 
-       // Log email based on account type
+        // Log email based on account type
         const email =
             req.user?.account_email || req.user?.port_account_email || "Unknown email";
 
@@ -276,89 +256,117 @@ exports.signout = async (req, res) => {
     }
 };
 
-// Request password reset
+// Request password reset - Both PortAccount and UserAccount
 exports.requestReset = async (req, res) => {
-    const { email } = req.body;
+    try {
+        const { email } = req.body;
 
-    // Validate email format
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        return res.status(400).send({ message: "Invalid email format." });
-    }
-
-    // Check if email exists - Find PortAccount first
-    let emailAccount = await PortAccount.findOne({ where: { port_account_email: email } });
-    let account_type;
-
-    if (emailAccount) {
-        account_type = "port";
-    } else {
-        // Try UserAccount if PortAccount not found
-        emailAccount = await UserAccount.findOne({ where: { account_email: email } });
-
-        // Not found at all
-        if (!emailAccount) {
-            return res.status(404).send({ message: "Email not found." });
+        // Validate email and format
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            return res.status(400).send({
+                message: !email
+                    ? "No email request reset password."
+                    : "Invalid email format."
+            });
         }
 
-        account_type = "user";
+        // If email exists - Find PortAccount first
+        let emailAccount = await PortAccount.findOne({ where: { port_account_email: email } });
+        let account_type;
+
+        if (emailAccount) {
+            account_type = "port";
+        } else {
+            // Try UserAccount if PortAccount not found
+            emailAccount = await UserAccount.findOne({ where: { account_email: email } });
+
+            // Not found at all
+            if (!emailAccount) {
+                return res.status(404).send({ message: "Email not found." });
+            }
+
+            account_type = "user";
+        }
+
+        // Generate Token and store
+        const token = crypto.randomBytes(32).toString("hex");
+        const expiry = Date.now() + 15 * 60 * 1000; // 15 minutes
+        resetStore.set(token, { email, account_type, expiry });
+
+        const resetLink = `http://localhost:8080/api/auth/reset-password/${token}`;
+
+        // Send notification to Email
+        await notificationService.sendEmail(
+            email,
+            "Password Reset",
+            `Click <a href="${resetLink}">here</a> to reset your password. This link expires in 15 minutes.`
+        );
+
+        res.send({ message: "Reset link sent to your email." });
+    } catch (err) {
+        console.error("Error in requestReset:", err);
+        res.status(500).send({ message: "Failed to process password reset request.", error: err.message });
     }
-
-    // Generate Token and store
-    const token = crypto.randomBytes(32).toString("hex");
-    const expiry = Date.now() + 15 * 60 * 1000; // 15 minutes
-
-    resetStore.set(token, { email, account_type, expiry });
-
-    const resetLink = `http://localhost:8080/api/auth/reset-password/${token}`;
-
-    await notificationService.sendEmail(email, `Password Reset`, `Click <a href="${resetLink}">here</a> to reset your password. This link expires in 15 minutes.`);
-    res.send({ message: "Reset link sent to your email." });
 };
 
-// Reset password
+// Reset password - Both PortAccount and UserAccount
 exports.resetPassword = async (req, res) => {
-    const { token } = req.params;
-    const { newPassword } = req.body;
-
-    // Validate password length
-    if (newPassword && newPassword.length < 6) {
-        return res.status(400).send({ message: "Password must be at least 6 characters long." });
-    }
-
-    const entry = resetStore.get(token);
-
-    const email = entry?.email;
-    const account_type = entry?.account_type;
-    //const contact_no = entry?.contact_no;
-
     try {
+        const { token } = req.params;
+        const { newPassword } = req.body;
+
+        // Validate password and length
+        if (!newPassword || newPassword.length < 6) {
+            return res.status(400).send({
+                message: !newPassword
+                    ? "Password is required."
+                    : "Password must be at least 6 characters long."
+            });
+        }
+
+        const entry = resetStore.get(token);
+
+        const email = entry?.email;
+        const account_type = entry?.account_type;
+        //const contact_no = entry?.contact_no; //For WhatsApp, current not use
+
         // Validate token
         if (!entry || entry.expiry < Date.now()) {
-            await notificationService.sendEmail(email, "Password Reset Attempt Failed", "Your password reset link was invalid or expired.");
-            //await notificationService.sendWhatsApp(contact_no, "Password reset failed: invalid or expired link."); //Keep aside first
+            await notificationService.sendEmail(email,
+                "Password Reset Attempt Failed",
+                "Your password reset link was invalid or expired.");
+            // await notificationService.sendWhatsApp(contact_no,
+            //     "Password reset failed: invalid or expired link.");   //Keep aside first
             return res.status(400).send({ message: "Invalid or expired token." });
         }
 
-        let account;
+        let account; //For finding an account
 
         if (account_type === "port") {
             // Find account by email - Port Account first
             account = await PortAccount.findOne({ where: { port_account_email: email } });
             if (!account) {
-                await notificationService.sendEmail(email, "Password Reset Attempt Failed", "Your port account could not be found.");
-                // await notificationService.sendWhatsApp(contact_no, "Password reset failed: account not found.");  //Keep aside first
+                await notificationService.sendEmail(email,
+                    "Password Reset Attempt Failed",
+                    "Your port account could not be found.");
+                // await notificationService.sendWhatsApp(contact_no,
+                //     "Password reset failed: account not found.");  //Keep aside first
                 return res.status(404).send({ message: "Account not found." });
             }
 
             // Update password
             account.port_account_password = bcrypt.hashSync(newPassword, 8);
         } else {
-            // If PortAccount not found
+            // If PortAccount not found, try UserAccount
             account = await UserAccount.findOne({ where: { account_email: email } });
 
+            // Account not found at all
             if (!account) {
-                await notificationService.sendEmail(email, "Password Reset Attempt Failed", "Your user account could not be found.");
-                // await notificationService.sendWhatsApp(contact_no, "Password reset failed: account not found.");  //Keep aside first
+                await notificationService.sendEmail(email,
+                    "Password Reset Attempt Failed",
+                    "Your user account could not be found.");
+                // await notificationService.sendWhatsApp(contact_no,
+                //     "Password reset failed: account not found.");  //Keep aside first
                 return res.status(404).send({ message: "Account not found." });
             }
 
@@ -370,13 +378,19 @@ exports.resetPassword = async (req, res) => {
         resetStore.remove(token); // Invalidate token
 
         // Send Success Notification
-        await notificationService.sendEmail(email, "Password Reset Successful", "Your password has been reset successfully.");
-        //await notificationService.sendWhatsApp(contact_no, "Your password has been reset successfully.");  //Keep aside first
+        await notificationService.sendEmail(email,
+            "Password Reset Successful",
+            "Your password has been reset successfully.");
+        //await notificationService.sendWhatsApp(contact_no,
+        //  "Your password has been reset successfully.");  //Keep aside first
         res.send({ message: "Password has been reset successfully." });
     } catch (err) {
         // Send Failed Notification
-        await notificationService.sendEmail(email, "Password Reset Attempt Failed", "An error occurred during your password reset attempt.");
-        //await notificationService.sendWhatsApp(contact_no, "Password reset failed due to a system error."); //Keep aside first
+        await notificationService.sendEmail(email,
+            "Password Reset Attempt Failed",
+            "An error occurred during your password reset attempt.");
+        //await notificationService.sendWhatsApp(contact_no,
+        //  "Password reset failed due to a system error."); //Keep aside first
         res.status(500).send({ message: "Error resetting password.", error: err.message });
     }
 };

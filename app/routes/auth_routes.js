@@ -1,6 +1,5 @@
-//const { verifySignUp } = require("../middleware");
 const controller = require("../controllers/auth_controller");
-const { authJwt } = require("../middleware");
+const { authJwt, verifyInput } = require("../middleware");
 
 module.exports = function(app) {
     app.use(function(req, res, next) {
@@ -11,8 +10,8 @@ module.exports = function(app) {
         next();
     });
 
-    // Authentication routes
-    app.post("/api/auth/signup", controller.registerUser);
+    // Authentication and Registration Routes
+    app.post("/api/auth/signup", verifyInput.verifyUserDetails, controller.registerUser);
     app.post("/api/auth/signin", controller.signin);
     app.get("/api/auth/signout", authJwt.verifyToken, controller.signout);
 

@@ -1,4 +1,4 @@
-const { authJwt } = require("../middleware");
+const { authJwt, verifyRoleOrID, verifyInput } = require("../middleware");
 const controller = require("../controllers/port_controller");
 
 module.exports = function(app) {
@@ -13,31 +13,37 @@ module.exports = function(app) {
     // Add Port Account
     app.post(
         "/api/port/account/add",
-        [authJwt.verifyToken, authJwt.isPortAccount],
+        [authJwt.verifyToken, authJwt.isPortAccount,
+            verifyRoleOrID.verifyPortRole, verifyInput.verifyPortDetails],
         controller.addPortAccount
     );
 
     // Update Port Account
     app.put("/api/port/account/:id",
-        [authJwt.verifyToken, authJwt.isPortAccount],
+        [authJwt.verifyToken, authJwt.isPortAccount,
+            verifyRoleOrID.verifyPortRole, verifyRoleOrID.verifyCorrectPortID,
+            verifyInput.verifyPortDetails],
         controller.updatePortAccount
     );
 
     // Delete Port Account
     app.delete("/api/port/account/:id",
-        [authJwt.verifyToken, authJwt.isPortAccount],
+        [authJwt.verifyToken, authJwt.isPortAccount,
+            verifyRoleOrID.verifyPortRole, verifyRoleOrID.verifyCorrectPortID],
         controller.deletePortAccount
     );
 
     // Search Port Account
     app.get("/api/port/account/search",
-        [authJwt.verifyToken, authJwt.isPortAccount],
+        [authJwt.verifyToken, authJwt.isPortAccount,
+            verifyRoleOrID.verifyPortRole],
         controller.searchPortAccount
     );
 
     // View Port Account
     app.get("/api/port/account/:id",
-        [authJwt.verifyToken, authJwt.isPortAccount],
+        [authJwt.verifyToken, authJwt.isPortAccount,
+            verifyRoleOrID.verifyCorrectPortID],
         controller.viewPortAccount
     );
 
@@ -49,7 +55,8 @@ module.exports = function(app) {
 
     // Update Account Profile
     app.put("/api/port/accountprofile",
-        [authJwt.verifyToken, authJwt.isPortAccount],
+        [authJwt.verifyToken, authJwt.isPortAccount,
+            verifyInput.verifyPortDetails],
         controller.updateAccountProfile
     );
 };

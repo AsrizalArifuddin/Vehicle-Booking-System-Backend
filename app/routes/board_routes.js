@@ -12,14 +12,15 @@ module.exports = function(app) {
         next();
     });
 
-    // app.get(
-    //     "/api/type/user",
-    //     [authJwt.verifyToken],
-    //     controller.userView
-    // );
+    // User Routes
+    app.get(
+        "/api/board/user",
+        [authJwt.verifyToken, authJwt.isUserAccount],
+        controller.userView
+    );
 
 
-    // Port routes
+    // Port Routes
     app.get(
         "/api/board/port",
         [authJwt.verifyToken, authJwt.isPortAccount],
