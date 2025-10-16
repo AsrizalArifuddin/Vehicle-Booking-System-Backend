@@ -62,9 +62,8 @@ exports.getPendingUsers = async (req, res) => {
 };
 
 exports.processDecision = async (req, res) => {
-    const { user_account_id, decision } = req.body; // decision = 1 (approve), 2 (reject), 3(delete)
-
     try {
+        const { user_account_id, decision } = req.body; // decision = 1 (approve), 2 (reject), 3(delete)
         const user = await UserAccount.findByPk(user_account_id);
         if (!user) {
             return res.status(404).send({ message: "User not found." });
@@ -103,7 +102,8 @@ exports.processDecision = async (req, res) => {
 
         // Send WhatsApp notification // Keep aside first
         // const contact_no = await getContactNo(user); //fetch from Agent or Company
-        // await notificationService.sendWhatsApp(contact_no, `Your registration has been ${statusText}.`);
+        // await notificationService.sendWhatsApp(contact_no,
+        //      `Your registration has been ${statusText}.`);
 
         res.status(200).send({ message: `User successfully ${statusText}.` });
     } catch (err) {

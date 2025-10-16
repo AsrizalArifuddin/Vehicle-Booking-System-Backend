@@ -1,4 +1,4 @@
-const { authJwt } = require("../middleware");
+const { authJwt, verifyInput } = require("../middleware");
 const controller = require("../controllers/user_controller");
 
 module.exports = function(app) {
@@ -18,7 +18,8 @@ module.exports = function(app) {
 
     // Update Profile
     app.put("/api/user/accountprofile",
-        [authJwt.verifyToken, authJwt.isUserAccount],
+        [authJwt.verifyToken, authJwt.isUserAccount,
+            verifyInput.verifyUserDetails],
         controller.updateProfile
     );
 };

@@ -41,16 +41,20 @@ exports.registerUser = async (req, res) => {
             return res.status(400).send({ message: "Email, password, and account type are required." });
         }
 
+        // Most of the input validation is in middleware/verifyInput
+
         // Agent-specific validation
         if (account_type === 0) {
-            if (!agent_fullname || id_type === undefined || !id_no || !contact_no || !address || !state || !postcode || !city) {
+            if (!agent_fullname || id_type === undefined || !id_no
+                || !contact_no || !address || !state || !postcode || !city) {
                 return res.status(400).send({ message: "All agent fields are required." });
             }
         }
 
         // Company-specific validation
         if (account_type === 1) {
-            if (!company_name || !registration_no || !sst_no || !contact_no || !address || !state || !postcode || !city || !attc_registration) {
+            if (!company_name || !registration_no || !sst_no || !contact_no
+                || !address || !state || !postcode || !city || !attc_registration) {
                 return res.status(400).send({ message: "All company fields are required." });
             }
         }

@@ -139,15 +139,60 @@ const verifyUserDetails = async(req, res, next) => {
             }
         }
 
+        // Validate attc_registration - Reference only
+        // if (attc_registration && !/^[A-Za-z0-9\-\/]{1,50}$/.test(attc_registration)) {
+        //     return res.status(400).send({ message: "ATTC registration must be alphanumeric (max 50 chars)." });
+        // }
+
         next();
     } catch (err) {
         return res.status(500).send({ message: "Error validating user input.", error: err.message });
     }
 };
 
+const verifyDriverDetails = async(req, res, next) => {
+    try{
+        const {
+            driver_name,
+            driver_id_type,
+            driver_id_no,
+            driver_contact_no,
+            truck_lpn
+        } = req.body;
+
+        // Validation
+        if (driver_name && driver_name.length > 50) {
+            return res.status(400).send({ message: "Driver name must be under 50 characters." });
+        }
+
+        if (driver_id_type !== undefined && ![0, 1].includes(driver_id_type)) {
+            return res.status(400).send({ message: "Driver ID type must be 0 (ID Card) or 1 (Passport)." });
+        }
+
+        if (driver_id_no && driver_id_no.length > 20) {
+            return res.status(400).send({ message: "Driver ID number must be under 20 characters." });
+        }
+
+        if (driver_contact_no && !/^\d{8,15}$/.test(String(driver_contact_no))) {
+            return res.status(400).send({ message: "Driver contact number must be 8-15 digits." });
+        }
+
+        if (truck_lpn && (truck_lpn.length > 10 || !/^[A-Za-z0-9]+$/.test(truck_lpn))) {
+            return res.status(400).send({
+                message: "Truck license plate number must be alphanumeric and under 10 characters."
+            });
+        }
+
+        next();
+    } catch (err) {
+        return res.status(500).send({ message: "Error validating driver input.", error: err.message });
+    }
+};
+
 const verifyInput = {
     verifyPortDetails,
-    verifyUserDetails
+    verifyUserDetails,
+    verifyDriverDetails
 };
 
 module.exports = verifyInput;

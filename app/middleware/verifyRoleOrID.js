@@ -1,6 +1,7 @@
 const db = require("../models");
 
 const PortAccount = db.PortAccount;
+const Driver = db.Driver;
 
 const verifyPortRole = async(req, res, next) => {
     try{
@@ -34,10 +35,33 @@ const verifyCorrectPortID = async(req, res, next) => {
     }
 };
 
+const verifyCorrectDriverID = async(req, res, next) => {
+    try{
+        const userId = req.accountId;
+        const driverId = req.params.id;
+
+        const driver = await Driver.findOne({
+            where: {
+                driver_id: driverId,
+                user_account_id: userId // Ensures ownership
+            }
+        });
+
+        if (!driver) {
+            return res.status(404).send({ message: "Driver not found or not owned by your account." });
+        }
+
+        next();
+    } catch (err) {
+        return res.status(500).send({ message: "Error validating driver ID.", error: err.message });
+    }
+};
+
 
 const verifyRoleOrID = {
     verifyPortRole,
-    verifyCorrectPortID
+    verifyCorrectPortID,
+    verifyCorrectDriverID
 };
 
 module.exports = verifyRoleOrID;
