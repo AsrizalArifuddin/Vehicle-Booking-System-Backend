@@ -12,13 +12,13 @@ module.exports = function(app) {
 
     // View Profile
     app.get("/api/user/accountprofile",
-        [authJwt.verifyToken, authJwt.isPortAccount, authJwt.isUserAccount],
+        [authJwt.verifyToken, authJwt.isSuperAdmin, authJwt.isUserAccount],
         controller.viewProfile
     );
 
     // Update Profile
     app.put("/api/user/accountprofile",
-        [authJwt.verifyToken, authJwt.isPortAccount, authJwt.isUserAccount,
+        [authJwt.verifyToken, authJwt.isSuperAdmin, authJwt.isUserAccount,
             verifyInput.verifyUserDetails],
         controller.updateProfile
     );

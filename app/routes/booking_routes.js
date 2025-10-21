@@ -12,24 +12,24 @@ module.exports = function(app) {
 
     // Get driver list for booking form
     app.get("/api/booking/drivers",
-        [authJwt.verifyToken, authJwt.isPortAccount, authJwt.isUserAccount],
+        [authJwt.verifyToken, authJwt.isSuperAdmin, authJwt.isUserAccount],
         controller.getDriverList);
 
     // Create booking request
     app.post("/api/booking/create",
-        [authJwt.verifyToken, authJwt.isPortAccount, authJwt.isUserAccount,
+        [authJwt.verifyToken, authJwt.isSuperAdmin, authJwt.isUserAccount,
             verifyInput.verifyBookingDetails],
         controller.createBooking);
 
     // Update booking
     app.put("/api/booking/update/:id",
-        [authJwt.verifyToken, authJwt.isPortAccount, authJwt.isUserAccount,
+        [authJwt.verifyToken, authJwt.isSuperAdmin, authJwt.isUserAccount,
             verifyRoleOrID.verifyCorrectBookingID, verifyInput.verifyBookingDetails],
         controller.updateBooking);
 
     // Cancel Booking
     app.delete("/api/booking/cancel/:id",
-        [authJwt.verifyToken, authJwt.isPortAccount, authJwt.isUserAccount,
+        [authJwt.verifyToken, authJwt.isSuperAdmin, authJwt.isUserAccount,
             verifyRoleOrID.verifyCorrectBookingID],
         controller.cancelBooking);
 

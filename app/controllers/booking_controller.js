@@ -8,12 +8,12 @@ const notificationService = require("../services/sendNotification");
 exports.getDriverList = async (req, res) => {
     try {
         const userId = req.accountId;
-        const accountType = req.user?.account_type;
+        //const accountType = req.user?.account_type;
 
         // Token already block out the not user - reference only
-        if (![0, 1].includes(accountType)) {
-            return res.status(403).send({ message: "Unauthorized: Only agent or company can view drivers." });
-        }
+        // if (![0, 1].includes(accountType)) {
+        //     return res.status(403).send({ message: "Unauthorized: Only agent or company can view drivers." });
+        // }
 
         const drivers = await Driver.findAll({
         where: { user_account_id: userId },
@@ -34,12 +34,12 @@ exports.getDriverList = async (req, res) => {
 exports.createBooking = async (req, res) => {
     try {
         const userId = req.accountId;
-        const accountType = req.user?.account_type;
+        //const accountType = req.user?.account_type;
 
         // Token already block out the not user - reference only
-        if (![0, 1].includes(accountType)) {
-            return res.status(403).send({ message: "Unauthorized: Only agent or company can create bookings." });
-        }
+        // if (![0, 1].includes(accountType)) {
+        //     return res.status(403).send({ message: "Unauthorized: Only agent or company can create bookings." });
+        // }
 
         // Input data needed
         const { driver_id, booking_date, booking_type } = req.body;

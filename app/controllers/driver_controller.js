@@ -16,10 +16,10 @@ exports.addDriver = async (req, res) => {
 
         // Should not come out as already has middleware(isUserAccount)
         // Only agent/company can add drivers
-        const accountType = req.user?.account_type; // 0 = Agent, 1 = Company
-        if (![0, 1].includes(accountType)) {
-            return res.status(403).send({ message: "Unauthorized: Only agent or company can add drivers." });
-        }
+        // const accountType = req.user?.account_type; // 0 = Agent, 1 = Company
+        // if (![0, 1].includes(accountType)) {
+        //     return res.status(403).send({ message: "Unauthorized: Only agent or company can add drivers." });
+        // }
 
         if(!driver_name || driver_id_type === undefined || !driver_id_no || !driver_contact_no || !truck_lpn){
             return res.status(400).send({ message: "All fields are required." });
@@ -52,10 +52,10 @@ exports.updateDriver = async (req, res) => {
 
         // Should not come out as already has middleware(isUserAccount)
         // Only agent/company can update drivers
-        const accountType = req.user?.account_type; // 0 = Agent, 1 = Company
-        if (![0, 1].includes(accountType)) {
-            return res.status(403).send({ message: "Unauthorized: Only agent or company can update drivers." });
-        }
+        // const accountType = req.user?.account_type; // 0 = Agent, 1 = Company
+        // if (![0, 1].includes(accountType)) {
+        //     return res.status(403).send({ message: "Unauthorized: Only agent or company can update drivers." });
+        // }
 
         const driverId = req.params.id;
         const driver = await Driver.findOne({ where: { driver_id: driverId } });
@@ -78,10 +78,10 @@ exports.deleteDriver = async (req, res) => {
         const driverId = req.params.id;
         // Should not come out as already has middleware(isUserAccount)
         // Only agent/company can delete drivers
-        const accountType = req.user?.account_type; // 0 = Agent, 1 = Company
-        if (![0, 1].includes(accountType)) {
-            return res.status(403).send({ message: "Unauthorized: Only agent or company can delete drivers." });
-        }
+        // const accountType = req.user?.account_type; // 0 = Agent, 1 = Company
+        // if (![0, 1].includes(accountType)) {
+        //     return res.status(403).send({ message: "Unauthorized: Only agent or company can delete drivers." });
+        // }
 
         const driver = await Driver.findOne({ where: { driver_id: driverId } });
         await driver.destroy();
@@ -96,10 +96,10 @@ exports.viewDriver = async (req, res) => {
     try {
         // Should not come out as already has middleware(isUserAccount)
         // Only agent/company can view drivers
-        const accountType = req.user?.account_type; // 0 = Agent, 1 = Company
-        if (![0, 1].includes(accountType)) {
-            return res.status(403).send({ message: "Unauthorized: Only agent or company can view drivers." });
-        }
+        // const accountType = req.user?.account_type; // 0 = Agent, 1 = Company
+        // if (![0, 1].includes(accountType)) {
+        //     return res.status(403).send({ message: "Unauthorized: Only agent or company can view drivers." });
+        // }
 
         const driverId = req.params.id;
         const driver = await Driver.findOne({where: {driver_id: driverId}});
@@ -122,10 +122,10 @@ exports.searchDriver = async (req, res) => {
 
         // Should not come out as already has middleware(isUserAccount)
         // Only agent/company can search drivers
-        const accountType = req.user?.account_type; // 0 = Agent, 1 = Company
-        if (![0, 1].includes(accountType)) {
-            return res.status(403).send({ message: "Unauthorized: Only agent or company can search drivers." });
-        }
+        // const accountType = req.user?.account_type; // 0 = Agent, 1 = Company
+        // if (![0, 1].includes(accountType)) {
+        //     return res.status(403).send({ message: "Unauthorized: Only agent or company can search drivers." });
+        // }
 
         // Validate input
         if (!keyword) {
