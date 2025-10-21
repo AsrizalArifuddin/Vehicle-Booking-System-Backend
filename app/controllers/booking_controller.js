@@ -6,14 +6,15 @@ const Booking = db.Booking;
 const notificationService = require("../services/sendNotification");
 
 exports.getDriverList = async (req, res) => {
-    const userId = req.accountId;
-    const accountType = req.user?.account_type;
-
-    if (![0, 1].includes(accountType)) {
-        return res.status(403).send({ message: "Unauthorized: Only agent or company can view drivers." });
-    }
-
     try {
+        const userId = req.accountId;
+        const accountType = req.user?.account_type;
+
+        // Token already block out the not user - reference only
+        if (![0, 1].includes(accountType)) {
+            return res.status(403).send({ message: "Unauthorized: Only agent or company can view drivers." });
+        }
+
         const drivers = await Driver.findAll({
         where: { user_account_id: userId },
             attributes: ["driver_id", "driver_name"] //Display id and name only
@@ -31,32 +32,21 @@ exports.getDriverList = async (req, res) => {
 };
 
 exports.createBooking = async (req, res) => {
-    const userId = req.accountId;
-    const accountType = req.user?.account_type;
-
-    if (![0, 1].includes(accountType)) {
-        return res.status(403).send({ message: "Unauthorized: Only agent or company can create bookings." });
-    }
-
-    // Input data needed
-    const { driver_id, booking_date, booking_type } = req.body;
-
-    // Validate booking details
-    if (!driver_id || !booking_date || ![0, 1].includes(booking_type)) {
-        return res.status(400).send({ message: "Invalid booking details. Please fill all required fields." });
-    }
-
     try {
-        // Check if driver belongs to user
-        const driver = await Driver.findOne({
-            where: {
-                driver_id,
-                user_account_id: userId
-            }
-        });
+        const userId = req.accountId;
+        const accountType = req.user?.account_type;
 
-        if (!driver) {
-            return res.status(404).send({ message: "Selected driver not found under your account." });
+        // Token already block out the not user - reference only
+        if (![0, 1].includes(accountType)) {
+            return res.status(403).send({ message: "Unauthorized: Only agent or company can create bookings." });
+        }
+
+        // Input data needed
+        const { driver_id, booking_date, booking_type } = req.body;
+
+        // Validate booking details
+        if (!driver_id || !booking_date || booking_type === undefined) {
+            return res.status(400).send({ message: "Invalid booking details. Please fill all required fields." });
         }
 
         const newBooking = await Booking.create({
@@ -79,4 +69,64 @@ exports.createBooking = async (req, res) => {
         res.status(500).send({ message: "Failed to save booking.", error: err.message });
     }
 };
+
+exports.updateBooking = async (req, res) => {
+    try {
+        const bookingId = req.params.id;
+        const { driver_id, booking_date, booking_type } = req.body;
+
+        // Check booking pending status
+        const booking = await Booking.findByPk(bookingId);
+        if (booking.booking_status !== 0) {
+            return res.status(403).send({ message: "Only pending bookings can be updated." });
+        }
+
+        // Update booking
+        if(driver_id) booking.driver_id = driver_id;
+        if(booking_date) booking.booking_date = booking_date;
+        if(booking_type !== undefined) booking.booking_type = booking_type;
+
+        await booking.save();
+
+        // Notify port staff/admin
+        // await notificationService.sendEmail(
+        // "port_staff_admin",  // need to ask .............................................
+        // "Booking Updated",
+        // `Booking ID ${bookingId} has been updated by ${req.user?.account_email || "an agent/company"}.`
+        // );
+
+        res.status(200).send({ message: "Booking updated successfully.", data: booking });
+    } catch (err) {
+        res.status(500).send({ message: "Failed to update booking.", error: err.message });
+    }
+};
+
+exports.cancelBooking = async (req, res) => {
+    try {
+        const bookingId = req.params.id;
+
+        // Check booking pending status
+        const booking = await Booking.findByPk(bookingId);
+        if (booking.booking_status !== 0) {
+            return res.status(403).send({ message: "Only pending bookings can be canceled." });
+        }
+
+        // Delete booking
+        await booking.destroy();
+
+        // Notify port staff/admin
+        // await notificationService.sendEmail(
+        //     "port@example.com",
+        //     "Booking Canceled",
+        //     `Booking ID ${bookingId} has been canceled by ${req.user?.account_email || "an agent/company"}.`
+        // );
+
+        res.status(200).send({ message: "Booking canceled successfully." });
+    } catch (err) {
+        res.status(500).send({ message: "Failed to cancel booking.", error: err.message });
+    }
+};
+
+
+
 

@@ -2,6 +2,7 @@ const db = require("../models");
 
 const PortAccount = db.PortAccount;
 const Driver = db.Driver;
+const Booking = db.Booking;
 
 const verifyPortRole = async(req, res, next) => {
     try{
@@ -46,7 +47,6 @@ const verifyCorrectDriverID = async(req, res, next) => {
                 user_account_id: userId // Ensures ownership
             }
         });
-
         if (!driver) {
             return res.status(404).send({ message: "Driver not found or not owned by your account." });
         }
@@ -57,11 +57,33 @@ const verifyCorrectDriverID = async(req, res, next) => {
     }
 };
 
+const verifyCorrectBookingID = async(req, res, next) => {
+    try{
+        const userId = req.accountId;
+        const bookingId = req.params.id;
+
+        // Find booking
+        const booking = await Booking.findOne({
+            where: {
+                booking_id: bookingId,
+                user_account_id: userId
+            }
+        });
+        if (!booking) {
+            return res.status(404).send({ message: "Booking not found." });
+        }
+
+        next();
+    } catch (err) {
+        return res.status(500).send({ message: "Error validating booking ID.", error: err.message });
+    }
+};
 
 const verifyRoleOrID = {
     verifyPortRole,
     verifyCorrectPortID,
-    verifyCorrectDriverID
+    verifyCorrectDriverID,
+    verifyCorrectBookingID
 };
 
 module.exports = verifyRoleOrID;

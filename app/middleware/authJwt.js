@@ -46,6 +46,9 @@ const verifyToken = async(req, res, next) => {
 // Middleware for user_account access (Disabled for now)
 const isUserAccount = async (req, res, next) => {
     try {
+        // SuperAdmin bypass
+        if (req.superAdmin) return next();
+
         if (!req.accountId) {
             return res.status(401).send({ message: "Unauthorized: No account ID found." });
         }
@@ -92,6 +95,11 @@ const isPortAccount = async (req, res, next) => {
         // Attach role info for downstream use
         req.portAccount = port;
         req.portRole = port.port_account_role;
+
+        // SuperAdmin bypass flag
+        if (port.port_account_role === 3) {
+            req.superAdmin = true;
+        }
 
         next();
     } catch (error) {
