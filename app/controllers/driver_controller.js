@@ -1,10 +1,17 @@
 const db = require("../models");
 const { Op } = require("sequelize");
 
+const UserAccount = db.UserAccount;
 const Driver = db.Driver;
 
 exports.addDriver = async (req, res) => {
     try {
+        const userId = req.accountId;
+        const account = await UserAccount.findByPk(userId);
+        if (!account) {  //Should not come out if already sign in as user
+            return res.status(404).send({ message: "Your account was not found." });
+        }
+
         const {
             driver_name,
             driver_id_type,
@@ -12,14 +19,6 @@ exports.addDriver = async (req, res) => {
             driver_contact_no,
             truck_lpn
         } = req.body;
-        const userId = req.accountId;
-
-        // Should not come out as already has middleware(isUserAccount)
-        // Only agent/company can add drivers
-        // const accountType = req.user?.account_type; // 0 = Agent, 1 = Company
-        // if (![0, 1].includes(accountType)) {
-        //     return res.status(403).send({ message: "Unauthorized: Only agent or company can add drivers." });
-        // }
 
         if(!driver_name || driver_id_type === undefined || !driver_id_no || !driver_contact_no || !truck_lpn){
             return res.status(400).send({ message: "All fields are required." });
@@ -42,6 +41,12 @@ exports.addDriver = async (req, res) => {
 
 exports.updateDriver = async (req, res) => {
     try {
+        const userId = req.accountId;
+        const account = await UserAccount.findByPk(userId);
+        if (!account) {  //Should not come out if already sign in as user
+            return res.status(404).send({ message: "Your account was not found." });
+        }
+
         const {
             driver_name,
             driver_id_type,
@@ -49,13 +54,6 @@ exports.updateDriver = async (req, res) => {
             driver_contact_no,
             truck_lpn
         } = req.body;
-
-        // Should not come out as already has middleware(isUserAccount)
-        // Only agent/company can update drivers
-        // const accountType = req.user?.account_type; // 0 = Agent, 1 = Company
-        // if (![0, 1].includes(accountType)) {
-        //     return res.status(403).send({ message: "Unauthorized: Only agent or company can update drivers." });
-        // }
 
         const driverId = req.params.id;
         const driver = await Driver.findOne({ where: { driver_id: driverId } });
@@ -75,14 +73,13 @@ exports.updateDriver = async (req, res) => {
 
 exports.deleteDriver = async (req, res) => {
     try {
-        const driverId = req.params.id;
-        // Should not come out as already has middleware(isUserAccount)
-        // Only agent/company can delete drivers
-        // const accountType = req.user?.account_type; // 0 = Agent, 1 = Company
-        // if (![0, 1].includes(accountType)) {
-        //     return res.status(403).send({ message: "Unauthorized: Only agent or company can delete drivers." });
-        // }
+        const userId = req.accountId;
+        const account = await UserAccount.findByPk(userId);
+        if (!account) {  //Should not come out if already sign in as user
+            return res.status(404).send({ message: "Your account was not found." });
+        }
 
+        const driverId = req.params.id;
         const driver = await Driver.findOne({ where: { driver_id: driverId } });
         await driver.destroy();
 
@@ -94,12 +91,11 @@ exports.deleteDriver = async (req, res) => {
 
 exports.viewDriver = async (req, res) => {
     try {
-        // Should not come out as already has middleware(isUserAccount)
-        // Only agent/company can view drivers
-        // const accountType = req.user?.account_type; // 0 = Agent, 1 = Company
-        // if (![0, 1].includes(accountType)) {
-        //     return res.status(403).send({ message: "Unauthorized: Only agent or company can view drivers." });
-        // }
+        const userId = req.accountId;
+        const account = await UserAccount.findByPk(userId);
+        if (!account) {  //Should not come out if already sign in as user
+            return res.status(404).send({ message: "Your account was not found." });
+        }
 
         const driverId = req.params.id;
         const driver = await Driver.findOne({where: {driver_id: driverId}});
@@ -118,14 +114,12 @@ exports.viewDriver = async (req, res) => {
 exports.searchDriver = async (req, res) => {
     try {
         const userId = req.accountId;
-        const keyword = req.query.keyword?.trim();
+        const account = await UserAccount.findByPk(userId);
+        if (!account) {  //Should not come out if already sign in as user
+            return res.status(404).send({ message: "Your account was not found." });
+        }
 
-        // Should not come out as already has middleware(isUserAccount)
-        // Only agent/company can search drivers
-        // const accountType = req.user?.account_type; // 0 = Agent, 1 = Company
-        // if (![0, 1].includes(accountType)) {
-        //     return res.status(403).send({ message: "Unauthorized: Only agent or company can search drivers." });
-        // }
+        const keyword = req.query.keyword?.trim();
 
         // Validate input
         if (!keyword) {

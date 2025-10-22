@@ -7,21 +7,21 @@ exports.viewProfile = async (req, res) => {
     try {
         const accountId = req.accountId;
         const account = await UserAccount.findByPk(accountId, {
-        attributes: ["account_email", "account_type"],
-        include: [
-            {
-                model: db.Agent,
-                as: "agent",
-                attributes: ["agent_fullname", "id_type", "id_no", "contact_no", "address", "state", "postcode", "city"],
-                required: false
-            },
-            {
-                model: db.Company,
-                as: "company",
-                attributes: ["company_name", "registration_no", "sst_no", "contact_no", "address", "state", "postcode", "city", "attc_registration"],
-                required: false
-            }
-        ]
+            attributes: ["account_email", "account_type"],
+            include: [
+                {
+                    model: db.Agent,
+                    as: "agent",
+                    attributes: ["agent_fullname", "id_type", "id_no", "contact_no", "address", "state", "postcode", "city"],
+                    required: false
+                },
+                {
+                    model: db.Company,
+                    as: "company",
+                    attributes: ["company_name", "registration_no", "sst_no", "contact_no", "address", "state", "postcode", "city", "attc_registration"],
+                    required: false
+                }
+            ]
         });
 
         if (!account) {  //Should not come out if already sign in as user

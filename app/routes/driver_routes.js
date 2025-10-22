@@ -1,4 +1,4 @@
-const { authJwt, verifyInput, verifyRoleOrID } = require("../middleware");
+const { authToken, verifyInput, verifyRoleOrID } = require("../middleware");
 const controller = require("../controllers/driver_controller");
 
 module.exports = function(app) {
@@ -12,30 +12,30 @@ module.exports = function(app) {
 
     // Add driver info (accessible only to agent/company)
     app.post("/api/driver/add",
-        [authJwt.verifyToken, authJwt.isSuperAdmin, authJwt.isUserAccount,
+        [authToken.verifyToken, authToken.isSuperAdmin, authToken.isUserAccount,
             verifyInput.verifyDriverDetails],
         controller.addDriver);
 
     // Update driver info
     app.put("/api/driver/update/:id",
-        [authJwt.verifyToken, authJwt.isSuperAdmin, authJwt.isUserAccount,
+        [authToken.verifyToken, authToken.isSuperAdmin, authToken.isUserAccount,
             verifyRoleOrID.verifyCorrectDriverID, verifyInput.verifyDriverDetails],
         controller.updateDriver);
 
     // Delete driver info
     app.delete("/api/driver/delete/:id",
-        [authJwt.verifyToken, authJwt.isSuperAdmin, authJwt.isUserAccount,
+        [authToken.verifyToken, authToken.isSuperAdmin, authToken.isUserAccount,
             verifyRoleOrID.verifyCorrectDriverID],
         controller.deleteDriver);
 
     // View driver info
     app.get("/api/driver/view/:id",
-        [authJwt.verifyToken, authJwt.isSuperAdmin, authJwt.isUserAccount,
+        [authToken.verifyToken, authToken.isSuperAdmin, authToken.isUserAccount,
             verifyRoleOrID.verifyCorrectDriverID],
         controller.viewDriver);
 
     // Search driver
     app.get("/api/driver/search",
-        [authJwt.verifyToken, authJwt.isSuperAdmin, authJwt.isUserAccount],
+        [authToken.verifyToken, authToken.isSuperAdmin, authToken.isUserAccount],
         controller.searchDriver);
 };

@@ -1,5 +1,5 @@
 const ApprovalController = require("../controllers/approval_controller");
-const { authJwt } = require("../middleware");
+const { authToken } = require("../middleware");
 
 module.exports = function(app) {
     app.use(function(req, res, next) {
@@ -13,12 +13,12 @@ module.exports = function(app) {
     // Get pending registration
     app.get(
         "/api/approval/pending",
-        [authJwt.verifyToken, authJwt.isPortAccount],
+        [authToken.verifyToken, authToken.isPortAccount],
         ApprovalController.getPendingUsers);
 
     // Registration Approval
     app.post(
         "/api/approval/decision",
-        [authJwt.verifyToken, authJwt.isPortAccount],
+        [authToken.verifyToken, authToken.isPortAccount],
         ApprovalController.processDecision);
 };

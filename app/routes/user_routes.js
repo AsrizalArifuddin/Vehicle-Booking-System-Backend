@@ -1,4 +1,4 @@
-const { authJwt, verifyInput } = require("../middleware");
+const { authToken, verifyInput } = require("../middleware");
 const controller = require("../controllers/user_controller");
 
 module.exports = function(app) {
@@ -12,13 +12,13 @@ module.exports = function(app) {
 
     // View Profile
     app.get("/api/user/accountprofile",
-        [authJwt.verifyToken, authJwt.isSuperAdmin, authJwt.isUserAccount],
+        [authToken.verifyToken, authToken.isSuperAdmin, authToken.isUserAccount],
         controller.viewProfile
     );
 
     // Update Profile
     app.put("/api/user/accountprofile",
-        [authJwt.verifyToken, authJwt.isSuperAdmin, authJwt.isUserAccount,
+        [authToken.verifyToken, authToken.isSuperAdmin, authToken.isUserAccount,
             verifyInput.verifyUserDetails],
         controller.updateProfile
     );

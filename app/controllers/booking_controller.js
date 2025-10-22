@@ -1,5 +1,6 @@
 const db = require("../models");
 
+const UserAccount = db.UserAccount;
 const Driver = db.Driver;
 const Booking = db.Booking;
 //const QRCode = db.QRCode; // later use
@@ -8,12 +9,11 @@ const notificationService = require("../services/sendNotification");
 exports.getDriverList = async (req, res) => {
     try {
         const userId = req.accountId;
-        //const accountType = req.user?.account_type;
 
-        // Token already block out the not user - reference only
-        // if (![0, 1].includes(accountType)) {
-        //     return res.status(403).send({ message: "Unauthorized: Only agent or company can view drivers." });
-        // }
+        const account = await UserAccount.findByPk(userId);
+        if (!account) {  //Should not come out if already sign in as user
+            return res.status(404).send({ message: "Your account was not found." });
+        }
 
         const drivers = await Driver.findAll({
         where: { user_account_id: userId },
@@ -34,12 +34,11 @@ exports.getDriverList = async (req, res) => {
 exports.createBooking = async (req, res) => {
     try {
         const userId = req.accountId;
-        //const accountType = req.user?.account_type;
 
-        // Token already block out the not user - reference only
-        // if (![0, 1].includes(accountType)) {
-        //     return res.status(403).send({ message: "Unauthorized: Only agent or company can create bookings." });
-        // }
+        const account = await UserAccount.findByPk(userId);
+        if (!account) {  //Should not come out if already sign in as user
+            return res.status(404).send({ message: "Your account was not found." });
+        }
 
         // Input data needed
         const { driver_id, booking_date, booking_type } = req.body;
@@ -72,6 +71,12 @@ exports.createBooking = async (req, res) => {
 
 exports.updateBooking = async (req, res) => {
     try {
+        const userId = req.accountId;
+        const account = await UserAccount.findByPk(userId);
+        if (!account) {  //Should not come out if already sign in as user
+            return res.status(404).send({ message: "Your account was not found." });
+        }
+
         const bookingId = req.params.id;
         const { driver_id, booking_date, booking_type } = req.body;
 
@@ -103,6 +108,12 @@ exports.updateBooking = async (req, res) => {
 
 exports.cancelBooking = async (req, res) => {
     try {
+        const userId = req.accountId;
+        const account = await UserAccount.findByPk(userId);
+        if (!account) {  //Should not come out if already sign in as user
+            return res.status(404).send({ message: "Your account was not found." });
+        }
+
         const bookingId = req.params.id;
 
         // Check booking pending status

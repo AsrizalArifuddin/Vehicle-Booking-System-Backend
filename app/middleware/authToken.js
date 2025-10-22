@@ -109,10 +109,10 @@ const isSuperAdmin = async (req, res, next) => {
             return res.status(401).send({ message: "Unauthorized: No account ID found." });
         }
 
-        const port = await PortAccount.findByPk(req.accountId);
+        const superAdmin = await PortAccount.findByPk(req.accountId);
 
         // SuperAdmin bypass flag
-        if(port && port.port_account_role === 3){
+        if(superAdmin && superAdmin.port_account_role === 3){
             req.superAdmin = true;
         }
 
@@ -122,11 +122,11 @@ const isSuperAdmin = async (req, res, next) => {
     }
 };
 
-const authJwt = {
+const authToken = {
     verifyToken,
     isUserAccount,
     isPortAccount,
     isSuperAdmin
 };
 
-module.exports = authJwt;
+module.exports = authToken;

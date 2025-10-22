@@ -1,4 +1,4 @@
-const { authJwt, verifyRoleOrID, verifyInput } = require("../middleware");
+const { authToken, verifyRoleOrID, verifyInput } = require("../middleware");
 const controller = require("../controllers/booking_controller");
 
 module.exports = function(app) {
@@ -12,24 +12,24 @@ module.exports = function(app) {
 
     // Get driver list for booking form
     app.get("/api/booking/drivers",
-        [authJwt.verifyToken, authJwt.isSuperAdmin, authJwt.isUserAccount],
+        [authToken.verifyToken, authToken.isSuperAdmin, authToken.isUserAccount],
         controller.getDriverList);
 
     // Create booking request
     app.post("/api/booking/create",
-        [authJwt.verifyToken, authJwt.isSuperAdmin, authJwt.isUserAccount,
+        [authToken.verifyToken, authToken.isSuperAdmin, authToken.isUserAccount,
             verifyInput.verifyBookingDetails],
         controller.createBooking);
 
     // Update booking
     app.put("/api/booking/update/:id",
-        [authJwt.verifyToken, authJwt.isSuperAdmin, authJwt.isUserAccount,
+        [authToken.verifyToken, authToken.isSuperAdmin, authToken.isUserAccount,
             verifyRoleOrID.verifyCorrectBookingID, verifyInput.verifyBookingDetails],
         controller.updateBooking);
 
     // Cancel Booking
     app.delete("/api/booking/cancel/:id",
-        [authJwt.verifyToken, authJwt.isSuperAdmin, authJwt.isUserAccount,
+        [authToken.verifyToken, authToken.isSuperAdmin, authToken.isUserAccount,
             verifyRoleOrID.verifyCorrectBookingID],
         controller.cancelBooking);
 

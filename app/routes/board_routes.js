@@ -1,6 +1,6 @@
 //Reference Only - May use in future
 
-const { authJwt } = require("../middleware");
+const { authToken } = require("../middleware");
 const controller = require("../controllers/board_controller");
 
 module.exports = function(app) {
@@ -15,7 +15,7 @@ module.exports = function(app) {
     // User Routes
     app.get(
         "/api/board/user",
-        [authJwt.verifyToken, authJwt.isSuperAdmin, authJwt.isUserAccount],
+        [authToken.verifyToken, authToken.isSuperAdmin, authToken.isUserAccount],
         controller.userView
     );
 
@@ -23,7 +23,7 @@ module.exports = function(app) {
     // Port Routes
     app.get(
         "/api/board/port",
-        [authJwt.verifyToken, authJwt.isPortAccount],
+        [authToken.verifyToken, authToken.isPortAccount],
         controller.portView
     );
 };
