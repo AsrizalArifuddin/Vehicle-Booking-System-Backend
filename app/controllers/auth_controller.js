@@ -127,7 +127,8 @@ exports.registerUser = async (req, res) => {
         // Send email and WhatsApp
         await notificationService.sendEmail(account_email,
             "Registration Submitted",
-            "Your registration is pending approval.");
+            "Your registration is pending approval.",
+            null);
         // await notificationService.sendWhatsApp(contact_no,
         //     "Your registration has been submitted, waiting for approval");  //Keep aside first
 
@@ -303,7 +304,8 @@ exports.requestReset = async (req, res) => {
         await notificationService.sendEmail(
             email,
             "Password Reset",
-            `Click <a href="${resetLink}">here</a> to reset your password. This link expires in 15 minutes.`
+            `Click <a href="${resetLink}">here</a> to reset your password. This link expires in 15 minutes.`,
+            null
         );
 
         res.send({ message: "Reset link sent to your email." });
@@ -338,7 +340,8 @@ exports.resetPassword = async (req, res) => {
         if (!entry || entry.expiry < Date.now()) {
             await notificationService.sendEmail(email,
                 "Password Reset Attempt Failed",
-                "Your password reset link was invalid or expired.");
+                "Your password reset link was invalid or expired.",
+                null);
             // await notificationService.sendWhatsApp(contact_no,
             //     "Password reset failed: invalid or expired link.");   //Keep aside first
             return res.status(400).send({ message: "Invalid or expired token." });
@@ -352,7 +355,8 @@ exports.resetPassword = async (req, res) => {
             if (!account) {
                 await notificationService.sendEmail(email,
                     "Password Reset Attempt Failed",
-                    "Your port account could not be found.");
+                    "Your port account could not be found.",
+                    null);
                 // await notificationService.sendWhatsApp(contact_no,
                 //     "Password reset failed: account not found.");  //Keep aside first
                 return res.status(404).send({ message: "Account not found." });
@@ -368,7 +372,8 @@ exports.resetPassword = async (req, res) => {
             if (!account) {
                 await notificationService.sendEmail(email,
                     "Password Reset Attempt Failed",
-                    "Your user account could not be found.");
+                    "Your user account could not be found.",
+                    null);
                 // await notificationService.sendWhatsApp(contact_no,
                 //     "Password reset failed: account not found.");  //Keep aside first
                 return res.status(404).send({ message: "Account not found." });
@@ -384,7 +389,8 @@ exports.resetPassword = async (req, res) => {
         // Send Success Notification
         await notificationService.sendEmail(email,
             "Password Reset Successful",
-            "Your password has been reset successfully.");
+            "Your password has been reset successfully.",
+            null);
         //await notificationService.sendWhatsApp(contact_no,
         //  "Your password has been reset successfully.");  //Keep aside first
         res.send({ message: "Password has been reset successfully." });
@@ -392,7 +398,8 @@ exports.resetPassword = async (req, res) => {
         // Send Failed Notification
         await notificationService.sendEmail(email,
             "Password Reset Attempt Failed",
-            "An error occurred during your password reset attempt.");
+            "An error occurred during your password reset attempt.",
+            null);
         //await notificationService.sendWhatsApp(contact_no,
         //  "Password reset failed due to a system error."); //Keep aside first
         res.status(500).send({ message: "Error resetting password.", error: err.message });

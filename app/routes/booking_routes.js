@@ -17,20 +17,28 @@ module.exports = function(app) {
 
     // Create booking request
     app.post("/api/booking/create",
-        [authToken.verifyToken, authToken.isSuperAdmin, authToken.isUserAccount,
-            verifyInput.verifyBookingDetails],
+        [authToken.verifyToken, authToken.isSuperAdmin, authToken.isUserAccount],
         controller.createBooking);
 
     // Update booking
     app.put("/api/booking/update/:id",
         [authToken.verifyToken, authToken.isSuperAdmin, authToken.isUserAccount,
-            verifyRoleOrID.verifyCorrectBookingID, verifyInput.verifyBookingDetails],
+            verifyRoleOrID.verifyCorrectBookingID],
         controller.updateBooking);
 
     // Cancel Booking
-    app.delete("/api/booking/cancel/:id",
+    app.put("/api/booking/cancel/:id",
         [authToken.verifyToken, authToken.isSuperAdmin, authToken.isUserAccount,
             verifyRoleOrID.verifyCorrectBookingID],
         controller.cancelBooking);
 
+    // Port get pending booking requests
+    app.get("/api/booking/pending",
+        [authToken.verifyToken, authToken.isPortAccount],
+        controller.getPendingBookings);
+
+    // Port approve or reject booking request
+    app.post("/api/booking/approval",
+        [authToken.verifyToken, authToken.isPortAccount],
+        controller.approveOrRejectBooking);
 };

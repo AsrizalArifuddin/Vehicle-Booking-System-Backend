@@ -84,7 +84,7 @@ const isPortAccount = async (req, res, next) => {
         const port = await PortAccount.findByPk(req.accountId);
 
         if (!port) {
-            return res.status(404).send({ message: "Access denied. This route is only available to port officers." });
+            return res.status(403).send({ message: "Access denied. This route is only available to port officers." });
         }
 
         const validRoles = [1, 2, 3]; // Staff, Admin, SuperAdmin

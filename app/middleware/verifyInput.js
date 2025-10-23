@@ -3,6 +3,7 @@ const db = require("../models");
 const UserAccount = db.UserAccount;
 const PortAccount = db.PortAccount;
 const Driver = db.Driver;
+const Container = db.Container;
 
 const verifyPortDetails = async(req, res, next) => {
     try{
@@ -190,37 +191,12 @@ const verifyDriverDetails = async(req, res, next) => {
     }
 };
 
-const verifyBookingDetails = async(req, res, next) => {
+const verifyContainerDetails = async(req, res, next) => {
     try{
-        const userId = req.accountId;
-        const { driver_id, booking_date, booking_type } = req.body;
-
-        if(driver_id){
-            // Check if driver belongs to user
-            const driver = await Driver.findOne({
-                where: {
-                    driver_id: driver_id,
-                    user_account_id: userId
-                }
-            });
-            if (!driver) {
-                return res.status(404).send({ message: "Selected driver not found under your account." });
-            }
-        }
-
-        // Validate Booking Date Format
-        if (booking_date && !/^\d{4}-\d{2}-\d{2}$/.test(booking_date)) {
-            return res.status(400).send({ message: "Invalid date format. Use YYYY-MM-DD." });
-        }
-
-        // Validate Booking Type
-        if (booking_type !==undefined && ![0, 1].includes(booking_type)) {
-            return res.status(400).send({ message: "The booking type only can be 0(import) and 1(export)" });
-        }
-
+        
         next();
     } catch (err) {
-        return res.status(500).send({ message: "Error validating booking input.", error: err.message });
+        return res.status(500).send({ message: "Error validating container input.", error: err.message });
     }
 };
 
@@ -228,7 +204,7 @@ const verifyInput = {
     verifyPortDetails,
     verifyUserDetails,
     verifyDriverDetails,
-    verifyBookingDetails
+    verifyContainerDetails
 };
 
 module.exports = verifyInput;

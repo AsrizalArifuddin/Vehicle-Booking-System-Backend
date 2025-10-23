@@ -98,7 +98,8 @@ exports.processDecision = async (req, res) => {
 
         await notificationService.sendEmail(user.account_email,
             `Registration ${statusText}`,
-            `Your registration has been ${statusText} by the port officer.`);
+            `Your registration has been ${statusText} by the port officer.`,
+            null);
 
         // Send WhatsApp notification // Keep aside first
         // const contact_no = await getContactNo(user); //fetch from Agent or Company

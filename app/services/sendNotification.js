@@ -18,14 +18,27 @@ const transporter = nodemailer.createTransport({
 });
 
 // Helper to send notification email
-const sendEmail = async (account_email, subject, message) => {
+const sendEmail = async (account_email, subject, message, qrCodeBuffers = []) => {
     if (!account_email) return;
 
-    await transporter.sendMail({
+    const mailOptions = {
         to: account_email,
         subject,
-        html: `<p>${message}</p>`
-    });
+        html: `<p>${message}</p>`,
+        attachments: []
+    };
+
+    if (Array.isArray(qrCodeBuffers)) {
+        for (let i = 0; i < qrCodeBuffers.length; i++) {
+            mailOptions.attachments.push({
+            filename: `booking_qr_${i + 1}.png`,
+            content: qrCodeBuffers[i],
+            contentType: "image/png"
+            });
+        }
+    }
+
+    await transporter.sendMail(mailOptions);
 };
 
 // Keep aside first

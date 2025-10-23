@@ -1,10 +1,14 @@
 const db = require("../models");
 
 const UserAccount = db.UserAccount;
+const Agent = db.Agent;
+const Company = db.Company;
 const Driver = db.Driver;
 const Booking = db.Booking;
-//const QRCode = db.QRCode; // later use
+const Container = db.Container;
 const notificationService = require("../services/sendNotification");
+const qrService = require("../services/qrCodeGenerator")
+const ContainerService = require("../services/containerService");
 
 exports.getDriverList = async (req, res) => {
     try {
@@ -41,11 +45,27 @@ exports.createBooking = async (req, res) => {
         }
 
         // Input data needed
-        const { driver_id, booking_date, booking_type } = req.body;
+        const { booking_date, booking_type, containers } = req.body;
 
         // Validate booking details
-        if (!driver_id || !booking_date || booking_type === undefined) {
-            return res.status(400).send({ message: "Invalid booking details. Please fill all required fields." });
+        if (!booking_date || booking_type === undefined) {
+            return res.status(400).send({ message: "Missing booking details." });
+        }
+
+        // Validate Booking Date Format
+        if (booking_date && !/^\d{4}-\d{2}-\d{2}$/.test(booking_date)) {
+            return res.status(400).send({ message: "Invalid date format. Use YYYY-MM-DD." });
+        }
+
+        // Validate Booking Type
+        if (booking_type !==undefined && ![0, 1].includes(booking_type)) {
+            return res.status(400).send({ message: "The booking type only can be 0(import) and 1(export)" });
+        }
+
+        // Container Validation
+        const containerErrors = await ContainerService.validateContainers(containers, userId);
+        if (containerErrors.length > 0) {
+            return res.status(400).send({ message: "Container validation failed.", errors: containerErrors });
         }
 
         const newBooking = await Booking.create({
@@ -56,12 +76,14 @@ exports.createBooking = async (req, res) => {
             booking_created_at: new Date()
         });
 
+        await ContainerService.createContainers(containers, newBooking.booking_id);
+
         // Trigger notification to Port Staff/Admin
         // await notificationService.sendEmail(
         //     "port_staff_admin",  // need to ask .............................................
         //     "New Booking Request",
-        //     `A new booking has been submitted by ${req.user?.account_name || "Agent/Company"} for ${booking_date}.`
-        // );
+        //     `A new booking has been submitted by ${req.user?.account_name || "Agent/Company"} for ${booking_date}.`,
+        //     null);
 
         res.status(201).send({ message: "Booking request submitted successfully.", data: newBooking });
     } catch (err) {
@@ -78,27 +100,84 @@ exports.updateBooking = async (req, res) => {
         }
 
         const bookingId = req.params.id;
-        const { driver_id, booking_date, booking_type } = req.body;
+        const {
+            booking_date,
+            booking_type,
+            containers_to_update,
+            containers_to_add,
+            containers_to_delete
+        } = req.body;
 
-        // Check booking pending status
+        // Check booking pending status and booking requester
         const booking = await Booking.findByPk(bookingId);
+        if (!booking || booking.user_account_id !== userId) {
+            return res.status(404).send({ message: "Booking not found or access denied." });
+        }
+
         if (booking.booking_status !== 0) {
             return res.status(403).send({ message: "Only pending bookings can be updated." });
         }
 
-        // Update booking
-        if(driver_id) booking.driver_id = driver_id;
-        if(booking_date) booking.booking_date = booking_date;
-        if(booking_type !== undefined) booking.booking_type = booking_type;
+        // Validate Booking Date Format
+        if (booking_date && !/^\d{4}-\d{2}-\d{2}$/.test(booking_date)) {
+            return res.status(400).send({ message: "Invalid date format. Use YYYY-MM-DD." });
+        }
 
+        // Validate Booking Type
+        if (booking_type !==undefined && ![0, 1].includes(booking_type)) {
+            return res.status(400).send({ message: "The booking type only can be 0(import) and 1(export)" });
+        }
+
+        // Validate containers first (if provided)
+        const errors = [];
+
+        if (Array.isArray(containers_to_add)) {
+            const addErrors = await ContainerService.validateContainerAdditions(containers_to_add, userId);
+            errors.push(...addErrors);
+        }
+
+        if (Array.isArray(containers_to_update)) {
+            const updateErrors = await ContainerService.validateContainerEdits(containers_to_update, bookingId, userId);
+            errors.push(...updateErrors);
+        }
+
+        if (errors.length > 0) {
+            return res.status(400).send({ message: "Validation failed.", errors });
+        }
+
+       // Booking field updates
+        if (booking_date) booking.booking_date = booking_date;
+        if (booking_type !== undefined) booking.booking_type = booking_type;
         await booking.save();
+
+        // Apply container changes
+        if (Array.isArray(containers_to_update)) {
+            await ContainerService.applyContainerEdits(containers_to_update, bookingId);
+        }
+
+        if (Array.isArray(containers_to_add)) {
+            await ContainerService.applyContainerAdditions(containers_to_add, bookingId);
+        }
+
+        if (Array.isArray(containers_to_delete)) {
+            const { errors: deletionErrors, validIds }
+                = await ContainerService.validateContainerDeletions(containers_to_delete, bookingId);
+            if (deletionErrors.length > 0) {
+                return res.status(400).send({
+                    message: "Container deletion failed.",
+                    errors: deletionErrors
+                });
+            }
+
+            await ContainerService.applyContainerDeletions(validIds, bookingId);
+        }
 
         // Notify port staff/admin
         // await notificationService.sendEmail(
         // "port_staff_admin",  // need to ask .............................................
         // "Booking Updated",
-        // `Booking ID ${bookingId} has been updated by ${req.user?.account_email || "an agent/company"}.`
-        // );
+        // `Booking ID ${bookingId} has been updated by ${req.user?.account_email || "an agent/company"}.`,
+        // null);
 
         res.status(200).send({ message: "Booking updated successfully.", data: booking });
     } catch (err) {
@@ -122,15 +201,20 @@ exports.cancelBooking = async (req, res) => {
             return res.status(403).send({ message: "Only pending bookings can be canceled." });
         }
 
-        // Delete booking
-        await booking.destroy();
+        // Update booking status to canceled (3)
+        booking.booking_status = 3;
+        await booking.save();
+
+        // Delete booking and containers
+        // await ContainerService.deleteContainersByBooking(bookingId);
+        // await booking.destroy();
 
         // Notify port staff/admin
         // await notificationService.sendEmail(
         //     "port@example.com",
         //     "Booking Canceled",
-        //     `Booking ID ${bookingId} has been canceled by ${req.user?.account_email || "an agent/company"}.`
-        // );
+        //     `Booking ID ${bookingId} has been canceled by ${req.user?.account_email || "an agent/company"}.`,
+        //     null);
 
         res.status(200).send({ message: "Booking canceled successfully." });
     } catch (err) {
@@ -138,6 +222,238 @@ exports.cancelBooking = async (req, res) => {
     }
 };
 
+exports.getPendingBookings = async (req, res) => {
+    try {
+        const pending = await Booking.findAll({
+            where: { booking_status: 0 },
+            include: [
+                {
+                    model: UserAccount,
+                    as: "user",
+                    attributes: ["user_account_id", "account_type", "account_email"]
+                },
+                {
+                    model: Container,
+                    as: "containers",
+                    include: [
+                        {
+                            model: Driver,
+                            as: "driver",
+                            attributes: ["driver_id", "driver_name"]
+                        }
+                    ]
+                }
+            ]
+        });
+
+        // If no pending bookings, return message
+        if (pending.length === 0) {
+            return res.status(200).send({
+                message: "No pending booking requests found."
+            });
+        }
+
+        const formatted = await Promise.all(pending.map(async booking => {
+            const user = booking.user;
+            let requester = {};
+
+            if (user.account_type === 0  && user.user_account_id) {     // Agent
+                const agent = await Agent.findOne({ where: { user_account_id: user.user_account_id } });
+                if (agent) {
+                    requester = {
+                        user_account_id: user.user_account_id,
+                        account_type: "Agent",
+                        agent_fullname: agent.agent_fullname,
+                        account_email: user.account_email,
+                        contact_no: agent.contact_no,
+                        id_no: agent.id_no
+                    };
+                }
+            } else if (user.account_type === 1 && user.user_account_id) {     // Company
+                const company = await Company.findOne({ where: { user_account_id: user.user_account_id } });
+                if (company) {
+                    requester = {
+                        user_account_id: user.user_account_id,
+                        account_type: "Company",
+                        company_name: company.company_name,
+                        account_email: user.account_email,
+                        contact_no: company.contact_no,
+                        registration_no: company.registration_no,
+                        sst_no: company.sst_no
+                    };
+                }
+            }
+
+            const containers = booking.containers.map(c => ({
+                container_id: c.container_id,
+                container_number: c.container_number,
+                container_size: c.container_size,
+                container_type: c.container_type,
+                driver_name: c.driver?.driver_name || null
+            }));
+
+            return {
+                booking_id: booking.booking_id,
+                booking_date: booking.booking_date,
+                booking_type: booking.booking_type,
+                requester,
+                containers
+            };
+        }));
+
+        res.status(200).send({
+            message: "Pending bookings retrieved.",
+            data: formatted
+        });
+    } catch (err) {
+        res.status(500).send({ message: "Error retrieving pending bookings.", error: err.message });
+    }
+};
+
+exports.approveOrRejectBooking = async (req, res) => {
+    try {
+        const { bookingId, action } = req.body;
+
+        //Find the booking
+        const booking = await Booking.findOne({
+            where: { booking_id: bookingId },
+            include: [
+                {
+                    model: UserAccount,
+                    as: "user",
+                    attributes: ["user_account_id", "account_type", "account_email"]
+                },
+                {
+                    model: Container,
+                    as: "containers",
+                    include: [
+                        {
+                            model: Driver,
+                            as: "driver",
+                            attributes: ["driver_id", "driver_name"]
+                        }
+                    ]
+                }
+            ]
+        });
+
+        if (!booking) {
+        return res.status(404).send({ message: "Booking not found." });
+        }
+
+        if (booking.booking_status !== 0) {
+            return res.status(403).send({ message: "Only pending bookings can be approved or rejected." });
+        }
+
+        // Validate action
+        if (![1, 2].includes(action)) {
+            return res.status(400).send({ message: "Invalid action. Use 1 for approve, 2 for reject." });
+        }
+
+        // Update booking status
+        booking.booking_status = action;
+        await booking.save();
+
+        // Get requester details
+        const user = booking.user;
+        let requester = {};
+        let requesterName = "";
+
+        if (user.account_type === 0) {
+            const agent = await Agent.findOne({ where: { user_account_id: user.user_account_id } });
+            if (agent) {
+                requester = {
+                    account_type: "Agent",
+                    agent_fullname: agent.agent_fullname,
+                    account_email: user.account_email,
+                    contact_no: agent.contact_no,
+                    id_no: agent.id_no
+                };
+                requesterName = agent.agent_fullname;
+            }
+        } else if (user.account_type === 1) {
+            const company = await Company.findOne({ where: { user_account_id: user.user_account_id } });
+            if (company) {
+                requester = {
+                    account_type: "Company",
+                    company_name: company.company_name,
+                    account_email: user.account_email,
+                    contact_no: company.contact_no,
+                    registration_no: company.registration_no,
+                    sst_no: company.sst_no
+                };
+                requesterName = company.company_name;
+            }
+        }
+
+        let qrCodeBuffers = [];
+        // Generate QR code if approved
+        if (action === 1) {
+            const uniqueDrivers = new Map();
+
+            for (const container of booking.containers) {
+                const driver = container.driver;
+                    if (driver && !uniqueDrivers.has(driver.driver_id)) {
+                        uniqueDrivers.set(driver.driver_id, driver);
+                    }
+            }
+
+            for (const [driverId, driver] of uniqueDrivers.entries()) {
+                const driverContainers = booking.containers.filter(c => c.driver?.driver_id === driverId);
+                const qrCodeBuffer = await qrService.generateBookingQR(booking, requester, driver, driverContainers);
+                if (qrCodeBuffer) {
+                    await qrService.saveQRCodeImage(qrCodeBuffer, booking.booking_id, driverId);
+
+                    // Store buffer for email attachment
+                    //qrCodeBuffers.push(qrCodeBuffer);
+                    qrCodeBuffers.push({
+                        driverId,
+                        buffer: qrCodeBuffer
+                    });
+                }
+            }
+
+            // qrCodeBuffer = await qrService.generateBookingQR(booking, requester);
+
+            // if (qrCodeBuffer) {
+            //     const imagePath = await saveQRCodeImage(qrCodeBuffer, bookingId);
+
+            //     await QRCodeRecord.create({
+            //         driver_id: booking.driver_id,
+            //         booking_id: booking.booking_id,
+            //         qr_code_status: "0", // active
+            //         qr_code_image_path: imagePath
+            //     });
+            // }
+        }
 
 
+        // Send notification
+        const statusText = action === 1 ? "Approved" : "Rejected";
+        const message = action === 1
+            ? `Dear ${requesterName}, your booking ID: ${bookingId} has been approved.\nQR Code attached below.`
+            : `Dear ${requesterName}, your booking ID: ${bookingId} has been rejected.`;
 
+        // await notificationService.sendEmail(user.account_email, `Booking ${statusText}`, message, qrCodeBuffer);
+        await notificationService.sendEmail(user.account_email, `Booking ${statusText}`, message, qrCodeBuffers.map(q => q.buffer));
+
+        // Option 1
+        // const qrCodeDataUrl = qrCodeBuffer
+        //    /?`data:image/png;base64,${qrCodeBuffer.toString("base64")}`
+        //     : null;
+        // res.status(200).send({
+        //     message: `Booking ${statusText} successfully.`,
+        //     qrCode: qrCodeDataUrl
+        // });
+
+        // Option 2
+        // res.setHeader("Content-Type", "image/png");
+        // res.setHeader("Content-Disposition", "inline; filename=booking_qr.png");
+        // return res.send(qrCodeBuffer);
+
+        // Option 3
+        res.status(200).send({ message: `Booking ${statusText} Successfully.` });
+    } catch (err) {
+        res.status(500).send({ message: "Error processing booking approval.", error: err.message });
+    }
+};
