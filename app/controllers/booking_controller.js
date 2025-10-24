@@ -1,4 +1,5 @@
 const db = require("../models");
+const { Op } = require("sequelize");
 
 const UserAccount = db.UserAccount;
 const Agent = db.Agent;
@@ -247,7 +248,7 @@ exports.getPendingBookings = async (req, res) => {
         });
 
         // If no pending bookings, return message
-        if (pending.length === 0) {
+        if (!pending || pending.length === 0) {
             return res.status(200).send({
                 message: "No pending booking requests found."
             });
@@ -412,21 +413,7 @@ exports.approveOrRejectBooking = async (req, res) => {
                     });
                 }
             }
-
-            // qrCodeBuffer = await qrService.generateBookingQR(booking, requester);
-
-            // if (qrCodeBuffer) {
-            //     const imagePath = await saveQRCodeImage(qrCodeBuffer, bookingId);
-
-            //     await QRCodeRecord.create({
-            //         driver_id: booking.driver_id,
-            //         booking_id: booking.booking_id,
-            //         qr_code_status: "0", // active
-            //         qr_code_image_path: imagePath
-            //     });
-            // }
         }
-
 
         // Send notification
         const statusText = action === 1 ? "Approved" : "Rejected";
@@ -455,5 +442,139 @@ exports.approveOrRejectBooking = async (req, res) => {
         res.status(200).send({ message: `Booking ${statusText} Successfully.` });
     } catch (err) {
         res.status(500).send({ message: "Error processing booking approval.", error: err.message });
+    }
+};
+
+exports.getBookingList = async (req, res) => {
+    try {
+        const userId = req.accountId;
+
+        const bookings = await Booking.findAll({
+            where: { user_account_id: userId },
+            attributes: ["booking_id", "booking_date", "booking_type", "booking_status"],
+            order: [["booking_date", "DESC"]]
+        });
+
+        if(!bookings || bookings.length === 0) {
+            return res.status(200).send({ message: "No bookings found.", data: [] });
+        }
+
+        res.status(200).send({ message: "Your bookings retrieved successfully.", data: bookings });
+    } catch (err) {
+        res.status(500).send({ message: "Error retrieving bookings.", error: err.message });
+    }
+};
+
+exports.getBookingDetails = async (req, res) => {
+    try {
+        const userId = req.accountId;
+        const bookingId = req.params.id;
+
+        const booking = await Booking.findOne({
+        where: {
+            booking_id: bookingId,
+            user_account_id: userId
+        },
+        include: [
+            {
+                model: Container,
+                as: "containers",
+                include: [
+                    {
+                        model: Driver,
+                        as: "driver",
+                        attributes: ["driver_id", "driver_name", "driver_contact_no"]
+                    }
+                ]
+            }
+        ]
+        });
+
+        res.status(200).send({ message: "Booking details retrieved successfully.", data: booking});
+    } catch (err) {
+        res.status(500).send({ message: "Error retrieving booking details.", error: err.message });
+    }
+};
+
+exports.searchBookings = async (req, res) => {
+    try {
+        const userId = req.accountId;
+        const { keyword } = req.query;
+
+        if (!keyword) {
+            return res.status(400).send({ message: "Keyword is required for searching." });
+        }
+
+        // Map keyword to booking_type or booking_status
+        const typeMap = { import: 0, export: 1 };
+        const statusMap = { pending: 0, approve: 1, rejected: 2, cancel: 3 };
+
+        const normalized = keyword.toLowerCase();
+        const mappedType = typeMap[normalized];
+        const mappedStatus = statusMap[normalized];
+
+        const topLevelWhere = {
+            user_account_id: userId,
+            [Op.or]: [
+                { booking_id: keyword },
+                mappedType !== undefined ? { booking_type: mappedType } : null,
+                mappedStatus !== undefined ? { booking_status: mappedStatus } : null,
+                { "$containers.container_number$": { [Op.like]: `%${keyword}%` } },
+                { "$containers.driver.driver_name$": { [Op.like]: `%${keyword}%` } }
+            ].filter(Boolean)
+        };
+
+        const bookings = await Booking.findAll({
+            where: topLevelWhere,
+            include: [{
+                model: Container,
+                as: "containers",
+                required: false,
+                include: [{
+                    model: Driver,
+                    as: "driver",
+                    attributes: ["driver_id", "driver_name"],
+                    required: false
+                }]
+            }],
+            order: [["booking_date", "DESC"]]
+        });
+
+        if (bookings.length === 0) {
+            return res.status(200).send({ message: "No bookings matched your search.", data: []});
+        }
+
+        res.status(200).send({ message: "Search results retrieved.", data: bookings});
+    } catch (err) {
+        res.status(500).send({ message: "Error searching your bookings.", error: err.message });
+    }
+};
+
+exports.downloadQRCode = async (req, res) => {
+    try {
+        const { id, driverId } = req.params;
+        const userId = req.accountId;
+
+        // Check approved status
+        const booking = await Booking.findByPk(id);
+        if (booking.booking_status !== 1) {
+            return res.status(400).send({ message: "QR code is only available for approved bookings." });
+        }
+
+        // Check driver belongs to user
+        const driver = await Driver.findOne({
+            where: {
+                driver_id: driverId,
+                user_account_id: userId // Ensures ownership
+            }
+        });
+        if (!driver) {
+            return res.status(404).send({ message: "Driver not found" });
+        }
+
+        // pass to services/qrCodeGenerator to handle download
+        return qrService.downloadQR(id, driverId, res);
+    } catch (err) {
+        res.status(500).send({ message: "Error validating QR download.", error: err.message });
     }
 };

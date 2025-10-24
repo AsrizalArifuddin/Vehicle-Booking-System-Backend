@@ -57,7 +57,7 @@ const generateQRCode = async (qrCodeText) => {
 };
 
 const saveQRCodeImage = async (buffer, bookingId, driverId) => {
-    const fileName = `qr_booking_${bookingId}_${Date.now()}.png`;
+    const fileName = `qr_booking_${bookingId}_${driverId}.png`;
     const filePath = path.join(__dirname, "..", "public", "qr_codes", fileName);
 
     // Save image to disk
@@ -79,10 +79,29 @@ const saveQRCodeImage = async (buffer, bookingId, driverId) => {
     return `/public/qr_codes/${fileName}`;
 };
 
+const downloadQR = async (bookingId, driverId, res) => {
+    try {
+        const qrPath = path.join(__dirname, "..", "public", "qr_codes", `qr_booking_${bookingId}_${driverId}.png`);
+
+        if (!fs.existsSync(qrPath)) {
+            return res.status(404).send({ message: "QR code file not found." });
+        }
+
+        res.download(qrPath, `qr_booking_${bookingId}_${driverId}.png`, (err) => {
+            if (err) {
+                return res.status(500).send({ message: "Failed to download QR code.", error: err.message });
+            }
+        });
+    } catch (err) {
+        res.status(500).send({ message: "Error downloading QR code.", error: err.message });
+    }
+};
+
 const qrService = {
     generateBookingQR,
     generateQRCode,
-    saveQRCodeImage
+    saveQRCodeImage,
+    downloadQR
 };
 
 module.exports = qrService ;

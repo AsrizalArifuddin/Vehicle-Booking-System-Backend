@@ -41,4 +41,26 @@ module.exports = function(app) {
     app.post("/api/booking/approval",
         [authToken.verifyToken, authToken.isPortAccount],
         controller.approveOrRejectBooking);
+
+    // User get booking list
+    app.get("/api/booking/list",
+        [authToken.verifyToken, authToken.isSuperAdmin, authToken.isUserAccount],
+        controller.getBookingList);
+
+    // User get booking details
+    app.get("/api/booking/details/:id",
+        [authToken.verifyToken, authToken.isSuperAdmin, authToken.isUserAccount,
+            verifyRoleOrID.verifyCorrectBookingID],
+        controller.getBookingDetails);
+
+    // Search bookings
+    app.get("/api/booking/search",
+        [authToken.verifyToken, authToken.isSuperAdmin, authToken.isUserAccount],
+        controller.searchBookings);
+
+    // Download booking QR code
+    app.get("/api/booking/:id/:driverId/download-qr",
+        [authToken.verifyToken, authToken.isSuperAdmin, authToken.isUserAccount,
+            verifyRoleOrID.verifyCorrectBookingID],
+        controller.downloadQRCode);
 };

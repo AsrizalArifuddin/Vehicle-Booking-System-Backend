@@ -40,6 +40,12 @@ module.exports = function(app) {
         controller.searchPortAccount
     );
 
+    // Get Port Account List
+    app.get("/api/port/account/list",
+        [authToken.verifyToken, authToken.isPortAccount],
+        controller.getPortAccountList
+    );
+
     // View Port Account
     app.get("/api/port/account/:id",
         [authToken.verifyToken, authToken.isPortAccount,

@@ -143,6 +143,24 @@ exports.searchPortAccount = async (req, res) => {
     }
 };
 
+//Get Port Account List
+exports.getPortAccountList = async (req, res) => {
+    try {
+        const portList = await PortAccount.findAll({
+            attributes: ["port_account_id", "port_account_username", "port_account_role"],
+            order: [["port_account_id", "ASC"]]
+        });
+
+        if (portList.length === 0) {
+            return res.status(200).send({ message: "No port accounts found." });
+        }
+
+        res.status(200).send({ message: "Port account list retrieved successfully.", data: portList});
+    } catch (err) {
+        res.status(500).send({ message: "Error retrieving port accounts.", error: err.message });
+    }
+};
+
 // View Port Account
 exports.viewPortAccount = async (req, res) => {
     try {
