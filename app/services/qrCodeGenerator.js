@@ -4,6 +4,7 @@ const path = require("path");
 const db = require("../models");
 
 const QRCode = db.QRCode;
+const Driver = db.Driver;
 
 const generateBookingQR = async (booking, requester, driver, containers) => {
     //const { booking_id, booking_date, booking_type, containers } = booking;
@@ -79,6 +80,35 @@ const saveQRCodeImage = async (buffer, bookingId, driverId) => {
     return `/public/qr_codes/${fileName}`;
 };
 
+const getQRDetailsByBooking = async (bookingId) => {
+    const qrEntries = await QRCode.findAll({
+        where: { booking_id: bookingId },
+        include: [
+            {
+                model: Driver,
+                as: "driver",
+                attributes: ["driver_id", "driver_name"]
+            }
+        ],
+        attributes: ["qr_code_status", "qr_code_image_path"]
+    });
+
+    if (!qrEntries.length) {
+        return null;
+    }
+
+    return qrEntries.map(entry => {
+        const qrPath = path.join(__dirname, "..", entry.qr_code_image_path);
+
+        return {
+            driver_id: entry.driver.driver_id,
+            driver_name: entry.driver.driver_name,
+            qr_status: entry.qr_code_status,
+            qr_path: qrPath
+        };
+    });
+};
+
 const downloadQR = async (bookingId, driverId, res) => {
     try {
         const qrPath = path.join(__dirname, "..", "public", "qr_codes", `qr_booking_${bookingId}_${driverId}.png`);
@@ -101,6 +131,7 @@ const qrService = {
     generateBookingQR,
     generateQRCode,
     saveQRCodeImage,
+    getQRDetailsByBooking,
     downloadQR
 };
 

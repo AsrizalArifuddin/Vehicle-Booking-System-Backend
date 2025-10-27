@@ -50,7 +50,7 @@ const verifyToken = async(req, res, next) => {
     }
 };
 
-// Middleware for user_account access (Disabled for now)
+// Middleware for user_account access - will pass superadmin
 const isUserAccount = async (req, res, next) => {
     try {
         // SuperAdmin bypass
@@ -71,7 +71,6 @@ const isUserAccount = async (req, res, next) => {
         return res.status(500).send({ message: "Error validating user account.", error: error.message });
     }
 };
-
 
 // Middleware for port_account access
 const isPortAccount = async (req, res, next) => {

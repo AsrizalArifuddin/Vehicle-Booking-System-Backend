@@ -104,7 +104,7 @@ exports.processDecision = async (req, res) => {
         // await notificationService.sendWhatsApp(contact_no,
         //      `Your registration has been ${statusText}.`);
 
-        res.status(200).send({ message: `User successfully "${statusText}d".` });
+        res.status(200).send({ message: `User successfully "${statusText}".` });
     } catch (err) {
         res.status(500).send({ message: "Failed to process decision.", error: err.message });
     }

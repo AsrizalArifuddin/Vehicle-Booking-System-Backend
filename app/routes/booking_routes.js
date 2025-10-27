@@ -59,10 +59,17 @@ module.exports = function(app) {
         controller.searchBookings
     );
 
+    // View approved booking QR code
+    app.get("/api/booking/approved/:bookingId",
+        [authToken.verifyToken, authToken.isUserAccount,
+            verifyRoleOrID.verifyCorrectBookingID],
+        controller.viewApprovedBookingQR
+    );
+
     // Download booking QR code
     app.get("/api/booking/:bookingId/:driverId/download-qr",
         [authToken.verifyToken, authToken.isUserAccount,
-            verifyRoleOrID.verifyCorrectBookingID],
+            verifyRoleOrID.verifyCorrectBookingID, verifyRoleOrID.verifyCorrectDriverID],
         controller.downloadQRCode
     );
 };

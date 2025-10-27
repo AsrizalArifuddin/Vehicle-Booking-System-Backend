@@ -6,6 +6,7 @@ const Agent = db.Agent;
 const Company = db.Company;
 const Driver = db.Driver;
 const Booking = db.Booking;
+const QRCode = db.QRCode;
 const Container = db.Container;
 const notificationService = require("../services/sendNotification");
 const qrService = require("../services/qrCodeGenerator")
@@ -339,7 +340,7 @@ exports.approveOrRejectBooking = async (req, res) => {
         });
 
         if (!booking) {
-        return res.status(404).send({ message: "Booking not found." });
+            return res.status(404).send({ message: "Booking not found." });
         }
 
         if (booking.booking_status !== 0) {
@@ -507,7 +508,7 @@ exports.searchBookings = async (req, res) => {
 
         // Map keyword to booking_type or booking_status
         const typeMap = { import: 0, export: 1 };
-        const statusMap = { pending: 0, approve: 1, rejected: 2, cancel: 3 };
+        const statusMap = { pending: 0, approved: 1, rejected: 2, canceled: 3 };
 
         const normalized = keyword.toLowerCase();
         const mappedType = typeMap[normalized];
@@ -550,26 +551,47 @@ exports.searchBookings = async (req, res) => {
     }
 };
 
+exports.viewApprovedBookingQR = async (req, res) => {
+    try {
+        const bookingId = req.params.bookingId;
+
+        // Check if booking is approved
+        const booking = await Booking.findOne({
+            where: {
+                booking_id: bookingId,
+                booking_status: 1 // approved
+            },
+            attributes: ["booking_id", "booking_date"]
+        });
+
+        if (!booking) {
+            return res.status(404).send({ message: "Approved booking not found." });
+        }
+
+        const qrList = await qrService.getQRDetailsByBooking(bookingId);
+
+        if (!qrList) { // Should not happen in approved booking
+            return res.status(404).send({ message: "No QR codes found for this booking." });
+        }
+
+        return res.status(200).send({
+            booking_id: booking.booking_id,
+            booking_date: booking.booking_date,
+            qr_codes: qrList
+        });
+    } catch (error) {
+        return res.status(500).send({ message: "Error retrieving QR codes.", error: error.message });
+    }
+};
+
 exports.downloadQRCode = async (req, res) => {
     try {
         const { bookingId, driverId } = req.params;
-        const userId = req.accountId;
 
         // Check approved status
         const booking = await Booking.findByPk(bookingId);
         if (booking.booking_status !== 1) {
             return res.status(400).send({ message: "QR code is only available for approved bookings." });
-        }
-
-        // Check driver belongs to user
-        const driver = await Driver.findOne({
-            where: {
-                driver_id: driverId,
-                user_account_id: userId // Ensures ownership
-            }
-        });
-        if (!driver) {
-            return res.status(404).send({ message: "Driver not found" });
         }
 
         // pass to services/qrCodeGenerator to handle download
