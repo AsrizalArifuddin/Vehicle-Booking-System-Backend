@@ -12,30 +12,35 @@ module.exports = function(app) {
 
     // Add driver info (accessible only to agent/company)
     app.post("/api/driver/add",
-        [authToken.verifyToken, authToken.isSuperAdmin, authToken.isUserAccount,
+        [authToken.verifyToken, authToken.isUserAccount,
             verifyInput.verifyDriverDetails],
-        controller.addDriver);
+        controller.addDriver
+    );
 
     // Update driver info
-    app.put("/api/driver/update/:id",
-        [authToken.verifyToken, authToken.isSuperAdmin, authToken.isUserAccount,
+    app.put("/api/driver/update/:driverId",
+        [authToken.verifyToken, authToken.isUserAccount,
             verifyRoleOrID.verifyCorrectDriverID, verifyInput.verifyDriverDetails],
-        controller.updateDriver);
+        controller.updateDriver
+    );
 
     // Delete driver info
-    app.delete("/api/driver/delete/:id",
-        [authToken.verifyToken, authToken.isSuperAdmin, authToken.isUserAccount,
+    app.delete("/api/driver/delete/:driverId",
+        [authToken.verifyToken, authToken.isUserAccount,
             verifyRoleOrID.verifyCorrectDriverID],
-        controller.deleteDriver);
+        controller.deleteDriver
+    );
 
     // View driver info
-    app.get("/api/driver/view/:id",
-        [authToken.verifyToken, authToken.isSuperAdmin, authToken.isUserAccount,
+    app.get("/api/driver/view/:driverId",
+        [authToken.verifyToken, authToken.isUserAccount,
             verifyRoleOrID.verifyCorrectDriverID],
-        controller.viewDriver);
+        controller.viewDriver
+    );
 
     // Search driver
     app.get("/api/driver/search",
-        [authToken.verifyToken, authToken.isSuperAdmin, authToken.isUserAccount],
-        controller.searchDriver);
+        [authToken.verifyToken, authToken.isUserAccount],
+        controller.searchDriver
+    );
 };

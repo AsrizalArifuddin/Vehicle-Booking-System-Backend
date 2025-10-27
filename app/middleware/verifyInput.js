@@ -68,18 +68,18 @@ const verifyUserDetails = async(req, res, next) => {
             account_email,
             account_password,
             account_type, // 0 = agent, 1 = company
-            //agent_fullname,
+            agent_fullname,
             id_type,
-            //id_no,
+            id_no,
             contact_no,
             address,
             state,
             postcode,
-            city//,
-            //company_name,
-            //registration_no,
-            //sst_no,
-            //attc_registration
+            city,
+            company_name,
+            registration_no,
+            sst_no,
+            attc_registration
         } = req.body;
 
         if(account_email){
@@ -105,13 +105,38 @@ const verifyUserDetails = async(req, res, next) => {
             return res.status(400).send({ message: "Invalid account type. Must be 0 (agent) or 1 (company)." });
         }
 
-        // ID Type must be 0 or 1
-        if (id_type && ![0, 1].includes(id_type)) {
+        // Validate agent name length
+        if (agent_fullname && agent_fullname.length > 50) {
+            return res.status(400).send({ message: "Agent full name must not exceed 50 characters." });
+        }
+
+        // Validate company name length
+        if (company_name && company_name.length > 50) {
+            return res.status(400).send({ message: "Company name must not exceed 50 characters." });
+        }
+
+        // ID Type must be 0 or 1 - agent only
+        if (id_type !== undefined && ![0, 1].includes(id_type)) {
             return res.status(400).send({ message: "Invalid id type. Must be 0 (ID Card) or 1 (Passport)." });
         }
 
+        // Validate ID Number - agent only
+        if (id_no && id_no.length > 20) {
+            return res.status(400).send({ message: "ID number must not exceed 20 characters." });
+        }
+
+        // Validate registration number length - company only
+        if (registration_no && registration_no.length > 20) {
+            return res.status(400).send({ message: "Registration number must not exceed 20 characters." });
+        }
+
+        // Validate SST number length - company only
+        if (sst_no && sst_no.length > 20) {
+            return res.status(400).send({ message: "SST number must not exceed 20 characters." });
+        }
+
         // Validate contact number (basic check: digits only, 8–15 characters)
-        if (contact_no && !/^\d{8,15}$/.test(contact_no)) {
+        if (contact_no && !/^\d{8,15}$/.test(String(contact_no))) {
             return res.status(400).send({ message: "Invalid contact number format." });
         }
 
@@ -141,10 +166,10 @@ const verifyUserDetails = async(req, res, next) => {
             }
         }
 
-        // Validate attc_registration - Reference only
-        // if (attc_registration && !/^[A-Za-z0-9\-\/]{1,50}$/.test(attc_registration)) {
-        //     return res.status(400).send({ message: "ATTC registration must be alphanumeric (max 50 chars)." });
-        // }
+        // Validate attc_registration - company only
+        if (attc_registration && attc_registration.length > 50) {
+            return res.status(400).send({ message: "ATTC registration must not exceed 50 characters." });
+        }
 
         next();
     } catch (err) {

@@ -12,7 +12,8 @@ module.exports = function(app) {
 
     // Authentication and Registration Routes
     app.post("/api/auth/signup", verifyInput.verifyUserDetails, controller.registerUser);
-    app.post("/api/auth/signin", controller.signin);
+    app.post("/api/auth/signin/user", controller.signinUser);
+    app.post("/api/auth/signin/port", controller.signinPort);
     app.get("/api/auth/signout", authToken.verifyToken, controller.signout);
 
     // Password reset routes

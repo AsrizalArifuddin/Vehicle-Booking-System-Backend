@@ -12,13 +12,13 @@ module.exports = function(app) {
 
     // View Profile
     app.get("/api/user/accountprofile",
-        [authToken.verifyToken, authToken.isSuperAdmin, authToken.isUserAccount],
+        [authToken.verifyToken, authToken.isUserAccount],
         controller.viewProfile
     );
 
     // Update Profile
     app.put("/api/user/accountprofile",
-        [authToken.verifyToken, authToken.isSuperAdmin, authToken.isUserAccount,
+        [authToken.verifyToken, authToken.isUserAccount,
             verifyInput.verifyUserDetails],
         controller.updateProfile
     );

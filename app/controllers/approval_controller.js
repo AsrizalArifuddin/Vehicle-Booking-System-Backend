@@ -39,9 +39,7 @@ exports.getPendingUsers = async (req, res) => {
 
         // If no pending users, return message
         if (rawUsers.length === 0) {
-            return res.status(200).send({
-                message: "No pending user accounts found."
-            });
+            return res.status(200).send({ message: "No pending user accounts found."});
         }
 
         // Clean up null associations while getting data
@@ -63,7 +61,7 @@ exports.getPendingUsers = async (req, res) => {
 
 exports.processDecision = async (req, res) => {
     try {
-        const { user_account_id, decision } = req.body; // decision = 1 (approve), 2 (reject), 3(delete)
+        const { user_account_id, decision } = req.body; // decision = 1(approve), 2(reject), 3(delete)
         const user = await UserAccount.findByPk(user_account_id);
         if (!user) {
             return res.status(404).send({ message: "User not found." });
@@ -82,9 +80,9 @@ exports.processDecision = async (req, res) => {
         // Determine status text
         let statusText = "";
         if (decision === 1) {
-            statusText = "approved";
+            statusText = "Approved";
         } else {
-            statusText = "rejected"; // Treat both 2 and 3 as rejection
+            statusText = "Rejected"; // Treat both 2 and 3 as rejection
         }
         //const now = new Date();
 
@@ -98,7 +96,7 @@ exports.processDecision = async (req, res) => {
 
         await notificationService.sendEmail(user.account_email,
             `Registration ${statusText}`,
-            `Your registration has been ${statusText} by the port officer.`,
+            `Your registration has been "${statusText}" by the port officer.`,
             null);
 
         // Send WhatsApp notification // Keep aside first
@@ -106,7 +104,7 @@ exports.processDecision = async (req, res) => {
         // await notificationService.sendWhatsApp(contact_no,
         //      `Your registration has been ${statusText}.`);
 
-        res.status(200).send({ message: `User successfully ${statusText}.` });
+        res.status(200).send({ message: `User successfully "${statusText}d".` });
     } catch (err) {
         res.status(500).send({ message: "Failed to process decision.", error: err.message });
     }

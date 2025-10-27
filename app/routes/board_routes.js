@@ -15,7 +15,7 @@ module.exports = function(app) {
     // User Routes
     app.get(
         "/api/board/user",
-        [authToken.verifyToken, authToken.isSuperAdmin, authToken.isUserAccount],
+        [authToken.verifyToken, authToken.isUserAccount],
         controller.userView
     );
 

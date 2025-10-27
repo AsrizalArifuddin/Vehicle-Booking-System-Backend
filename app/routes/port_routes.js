@@ -19,7 +19,7 @@ module.exports = function(app) {
     );
 
     // Update Port Account
-    app.put("/api/port/account/:id",
+    app.put("/api/port/account/:portId",
         [authToken.verifyToken, authToken.isPortAccount,
             verifyRoleOrID.verifyPortRole, verifyRoleOrID.verifyCorrectPortID,
             verifyInput.verifyPortDetails],
@@ -27,7 +27,7 @@ module.exports = function(app) {
     );
 
     // Delete Port Account
-    app.delete("/api/port/account/:id",
+    app.delete("/api/port/account/:portId",
         [authToken.verifyToken, authToken.isPortAccount,
             verifyRoleOrID.verifyPortRole, verifyRoleOrID.verifyCorrectPortID],
         controller.deletePortAccount
@@ -47,7 +47,7 @@ module.exports = function(app) {
     );
 
     // View Port Account
-    app.get("/api/port/account/:id",
+    app.get("/api/port/account/:portId",
         [authToken.verifyToken, authToken.isPortAccount,
             verifyRoleOrID.verifyCorrectPortID],
         controller.viewPortAccount

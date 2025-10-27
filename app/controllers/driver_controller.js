@@ -55,7 +55,7 @@ exports.updateDriver = async (req, res) => {
             truck_lpn
         } = req.body;
 
-        const driverId = req.params.id;
+        const driverId = req.params.driverId;
         const driver = await Driver.findOne({ where: { driver_id: driverId } });
         await driver.update({
             driver_name,
@@ -79,7 +79,7 @@ exports.deleteDriver = async (req, res) => {
             return res.status(404).send({ message: "Your account was not found." });
         }
 
-        const driverId = req.params.id;
+        const driverId = req.params.driverId;
         const driver = await Driver.findOne({ where: { driver_id: driverId } });
         await driver.destroy();
 
@@ -97,7 +97,7 @@ exports.viewDriver = async (req, res) => {
             return res.status(404).send({ message: "Your account was not found." });
         }
 
-        const driverId = req.params.id;
+        const driverId = req.params.driverId;
         const driver = await Driver.findOne({where: {driver_id: driverId}});
 
         const plain = driver.get({ plain: true });

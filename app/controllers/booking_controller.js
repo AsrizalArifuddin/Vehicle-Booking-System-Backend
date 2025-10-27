@@ -100,7 +100,7 @@ exports.updateBooking = async (req, res) => {
             return res.status(404).send({ message: "Your account was not found." });
         }
 
-        const bookingId = req.params.id;
+        const bookingId = req.params.bookingId;
         const {
             booking_date,
             booking_type,
@@ -194,7 +194,7 @@ exports.cancelBooking = async (req, res) => {
             return res.status(404).send({ message: "Your account was not found." });
         }
 
-        const bookingId = req.params.id;
+        const bookingId = req.params.bookingId;
 
         // Check booking pending status
         const booking = await Booking.findByPk(bookingId);
@@ -468,7 +468,7 @@ exports.getBookingList = async (req, res) => {
 exports.getBookingDetails = async (req, res) => {
     try {
         const userId = req.accountId;
-        const bookingId = req.params.id;
+        const bookingId = req.params.bookingId;
 
         const booking = await Booking.findOne({
         where: {
@@ -552,11 +552,11 @@ exports.searchBookings = async (req, res) => {
 
 exports.downloadQRCode = async (req, res) => {
     try {
-        const { id, driverId } = req.params;
+        const { bookingId, driverId } = req.params;
         const userId = req.accountId;
 
         // Check approved status
-        const booking = await Booking.findByPk(id);
+        const booking = await Booking.findByPk(bookingId);
         if (booking.booking_status !== 1) {
             return res.status(400).send({ message: "QR code is only available for approved bookings." });
         }
@@ -573,7 +573,7 @@ exports.downloadQRCode = async (req, res) => {
         }
 
         // pass to services/qrCodeGenerator to handle download
-        return qrService.downloadQR(id, driverId, res);
+        return qrService.downloadQR(bookingId, driverId, res);
     } catch (err) {
         res.status(500).send({ message: "Error validating QR download.", error: err.message });
     }

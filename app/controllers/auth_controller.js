@@ -138,15 +138,15 @@ exports.registerUser = async (req, res) => {
     }
 };
 
-// Login - Both PortAccount and UserAccount
-exports.signin = async (req, res) => {
+// Login - PortAccount
+exports.signinPort = async (req, res) => {
     try {
         const { identifier, password } = req.body;
         let account;
         let token;
         let response;
 
-        // Try PortAccount First (username or email)
+        // Can use username or email
         account = await PortAccount.findOne({
             where: {
                 [Op.or]: [
@@ -165,8 +165,11 @@ exports.signin = async (req, res) => {
                 return res.status(401).send({ message: "Invalid Password!" });
             }
 
+            // Determine token type based on role
+            const tokenType = account.port_account_role === 3 ? "superadmin" : "port";
+
             // Get ID and generate token with type
-            token = jwt.sign({ id: account.port_account_id, type: "port" }, config.secret, {
+            token = jwt.sign({ id: account.port_account_id, type: tokenType }, config.secret, {
                 algorithm: 'HS256',
                 allowInsecureKeySizes: true,
                 expiresIn: 86400 // 24 hours
@@ -184,11 +187,24 @@ exports.signin = async (req, res) => {
             };
 
             return res.status(200).send(response);
+        } else {
+            return res.status(404).send({ message: "Account not found." });
         }
+    } catch (error) {
+        return res.status(500).send({ message: error.message });
+    }
+};
 
-        // Try UserAccount if PortAccount not found (email only)
+// Login - UserAccount
+exports.signinUser = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        let account;
+        let token;
+        let response;
+
         account = await UserAccount.findOne({
-            where: { account_email: identifier }
+            where: { account_email: email }
         });
 
         // If not found at all, return error
@@ -242,17 +258,11 @@ exports.signin = async (req, res) => {
 // Logout - Both PortAccount and UserAccount
 exports.signout = async (req, res) => {
     try {
-        // Already use token to verify login status - not use already
-        // Check if accountId exists
-        // if (!req.accountId) {
-        //     return res.status(401).send({ message: "Unauthorized: You must be signed in to log out." });
-        // }
+        // Log email based on account type - testing purpose
+        // const email =
+        //     req.user?.account_email || req.user?.port_account_email || "Unknown email";
 
-        // Log email based on account type
-        const email =
-            req.user?.account_email || req.user?.port_account_email || "Unknown email";
-
-        console.log("Account signed out:", email);
+        // console.log("Account signed out:", email);
 
         req.session = null;
         return res.status(200).send({ message: "You've been signed out!" });
@@ -384,7 +394,7 @@ exports.resetPassword = async (req, res) => {
         }
 
         await account.save();
-        resetStore.remove(token); // Invalidate token
+        resetStore.remove(token); // Invalidate the reset password token
 
         // Send Success Notification
         await notificationService.sendEmail(email,

@@ -6,11 +6,8 @@ const Booking = db.Booking;
 
 const verifyPortRole = async(req, res, next) => {
     try{
-        // Check requester's role
-        const requesterRole = req.user?.port_account_role;
-
-        // Only allow admin and superadmin access
-        if (![2, 3].includes(requesterRole)) {
+        // Check role - Only allow admin and superadmin access
+        if (![2, 3].includes(req.user?.port_account_role)) {
             return res.status(403).send({ message: "Unauthorized: Only admin or superadmin to access." });
         }
 
@@ -22,7 +19,7 @@ const verifyPortRole = async(req, res, next) => {
 
 const verifyCorrectPortID = async(req, res, next) => {
     try{
-        const accountId = req.params.id;
+        const accountId = req.params.portId;
 
         // Account not found
         const account = await PortAccount.findByPk(accountId);
@@ -39,7 +36,7 @@ const verifyCorrectPortID = async(req, res, next) => {
 const verifyCorrectDriverID = async(req, res, next) => {
     try{
         const userId = req.accountId;
-        const driverId = req.params.id;
+        const driverId = req.params.driverId;
 
         const driver = await Driver.findOne({
             where: {
@@ -60,13 +57,12 @@ const verifyCorrectDriverID = async(req, res, next) => {
 const verifyCorrectBookingID = async(req, res, next) => {
     try{
         const userId = req.accountId;
-        const bookingId = req.params.id;
+        const bookingId = req.params.bookingId;
 
-        // Find booking
         const booking = await Booking.findOne({
             where: {
                 booking_id: bookingId,
-                user_account_id: userId
+                user_account_id: userId // Ensures ownership
             }
         });
         if (!booking) {

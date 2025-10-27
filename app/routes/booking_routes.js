@@ -12,23 +12,23 @@ module.exports = function(app) {
 
     // Get driver list for booking form
     app.get("/api/booking/drivers",
-        [authToken.verifyToken, authToken.isSuperAdmin, authToken.isUserAccount],
+        [authToken.verifyToken, authToken.isUserAccount],
         controller.getDriverList);
 
     // Create booking request
     app.post("/api/booking/create",
-        [authToken.verifyToken, authToken.isSuperAdmin, authToken.isUserAccount],
+        [authToken.verifyToken, authToken.isUserAccount],
         controller.createBooking);
 
     // Update booking
-    app.put("/api/booking/update/:id",
-        [authToken.verifyToken, authToken.isSuperAdmin, authToken.isUserAccount,
+    app.put("/api/booking/update/:bookingId",
+        [authToken.verifyToken, authToken.isUserAccount,
             verifyRoleOrID.verifyCorrectBookingID],
         controller.updateBooking);
 
     // Cancel Booking
-    app.put("/api/booking/cancel/:id",
-        [authToken.verifyToken, authToken.isSuperAdmin, authToken.isUserAccount,
+    app.put("/api/booking/cancel/:bookingId",
+        [authToken.verifyToken, authToken.isUserAccount,
             verifyRoleOrID.verifyCorrectBookingID],
         controller.cancelBooking);
 
@@ -44,23 +44,25 @@ module.exports = function(app) {
 
     // User get booking list
     app.get("/api/booking/list",
-        [authToken.verifyToken, authToken.isSuperAdmin, authToken.isUserAccount],
+        [authToken.verifyToken, authToken.isUserAccount],
         controller.getBookingList);
 
     // User get booking details
-    app.get("/api/booking/details/:id",
-        [authToken.verifyToken, authToken.isSuperAdmin, authToken.isUserAccount,
+    app.get("/api/booking/details/:bookingId",
+        [authToken.verifyToken, authToken.isUserAccount,
             verifyRoleOrID.verifyCorrectBookingID],
         controller.getBookingDetails);
 
     // Search bookings
     app.get("/api/booking/search",
-        [authToken.verifyToken, authToken.isSuperAdmin, authToken.isUserAccount],
-        controller.searchBookings);
+        [authToken.verifyToken, authToken.isUserAccount],
+        controller.searchBookings
+    );
 
     // Download booking QR code
-    app.get("/api/booking/:id/:driverId/download-qr",
-        [authToken.verifyToken, authToken.isSuperAdmin, authToken.isUserAccount,
+    app.get("/api/booking/:bookingId/:driverId/download-qr",
+        [authToken.verifyToken, authToken.isUserAccount,
             verifyRoleOrID.verifyCorrectBookingID],
-        controller.downloadQRCode);
+        controller.downloadQRCode
+    );
 };

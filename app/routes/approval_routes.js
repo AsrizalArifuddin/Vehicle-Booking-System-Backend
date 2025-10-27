@@ -14,11 +14,13 @@ module.exports = function(app) {
     app.get(
         "/api/approval/pending",
         [authToken.verifyToken, authToken.isPortAccount],
-        ApprovalController.getPendingUsers);
+        ApprovalController.getPendingUsers
+    );
 
     // Registration Approval
     app.post(
         "/api/approval/decision",
         [authToken.verifyToken, authToken.isPortAccount],
-        ApprovalController.processDecision);
+        ApprovalController.processDecision
+    );
 };

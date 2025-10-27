@@ -7,7 +7,6 @@ const PortAccount = db.PortAccount;
 // Add Port Account
 exports.addPortAccount = async (req, res) => {
     try {
-        // Extract data from request body
         const {
             port_account_username,
             port_account_email,
@@ -44,8 +43,6 @@ exports.addPortAccount = async (req, res) => {
 // Update Port Account
 exports.updatePortAccount = async (req, res) => {
     try {
-        const accountId = req.params.id;
-        // Extract data from request body
         const {
             port_account_username,
             port_account_email,
@@ -61,6 +58,7 @@ exports.updatePortAccount = async (req, res) => {
 
         // Input validation is in middleware/verifyInput
 
+        const accountId = req.params.portId;
         const account = await PortAccount.findByPk(accountId);
         // Update fields if provided
         if (port_account_username) account.port_account_username = port_account_username;
@@ -69,8 +67,7 @@ exports.updatePortAccount = async (req, res) => {
         if (port_contact_no) account.port_contact_no = port_contact_no;
         if (port_account_role !== undefined) account.port_account_role = port_account_role;
 
-        // Save updates
-        await account.save();
+        await account.save();  // Save updates
 
         res.status(200).send({ message: "Port account updated successfully.", data: account });
     } catch (err) {
@@ -81,7 +78,7 @@ exports.updatePortAccount = async (req, res) => {
 // Delete Port Account
 exports.deletePortAccount = async (req, res) => {
     try {
-        const accountId = parseInt(req.params.id);
+        const accountId = parseInt(req.params.portId);
         const account = await PortAccount.findByPk(accountId);
 
         // Prevent self-deletion
@@ -89,8 +86,7 @@ exports.deletePortAccount = async (req, res) => {
             return res.status(403).send({ message: "Unauthorized: You cannot delete your own account." });
         }
 
-        // Delete account
-        await account.destroy();
+        await account.destroy(); // Delete account
 
         res.status(200).send({ message: "Port account deleted successfully." });
     } catch (err) {
@@ -164,7 +160,7 @@ exports.getPortAccountList = async (req, res) => {
 // View Port Account
 exports.viewPortAccount = async (req, res) => {
     try {
-        const accountId = req.params.id;
+        const accountId = req.params.portId;
         const account = await PortAccount.findByPk(accountId, {
             // Only return these fields
             attributes: ["port_account_username", "port_account_email", "port_contact_no", "port_account_role"]
@@ -172,7 +168,6 @@ exports.viewPortAccount = async (req, res) => {
 
         // Convert to plain object and map role
         const plain = account.get({ plain: true });
-
         plain.port_account_role =
             plain.port_account_role === 1 ? "Staff" :
             plain.port_account_role === 2 ? "Admin" :
@@ -201,7 +196,6 @@ exports.viewAccountProfile = async (req, res) => {
 
         // Convert to plain object and map role
         const plain = account.get({ plain: true });
-
         plain.port_account_role =
             plain.port_account_role === 1 ? "Staff" :
             plain.port_account_role === 2 ? "Admin" :
@@ -218,7 +212,6 @@ exports.viewAccountProfile = async (req, res) => {
 exports.updateAccountProfile = async (req, res) => {
     try {
         const accountId = req.accountId;
-        // Extract data from request body
         const {
             port_account_username,
             port_account_email,
@@ -251,8 +244,7 @@ exports.updateAccountProfile = async (req, res) => {
         if (port_account_password) account.port_account_password = bcrypt.hashSync(port_account_password, 8);
         if (port_contact_no) account.port_contact_no = port_contact_no;
 
-        // Save updates
-        await account.save();
+        await account.save(); // Save updates
 
         res.status(200).send({ message: "Your profile has been updated successfully.", data: account });
     } catch (err) {
