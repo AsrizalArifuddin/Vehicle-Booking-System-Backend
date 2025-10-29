@@ -1,5 +1,6 @@
 const { authToken, verifyInput } = require("../middleware");
 const controller = require("../controllers/user_controller");
+const uploadFile = require("../middleware/uploadFile");
 
 module.exports = function(app) {
     app.use(function(req, res, next) {
@@ -19,7 +20,7 @@ module.exports = function(app) {
     // Update Profile
     app.put("/api/user/accountprofile",
         [authToken.verifyToken, authToken.isUserAccount,
-            verifyInput.verifyUserDetails],
+            uploadFile.single("attc_registration"), verifyInput.verifyUserDetails],
         controller.updateProfile
     );
 };

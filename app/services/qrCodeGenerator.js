@@ -58,8 +58,11 @@ const generateQRCode = async (qrCodeText) => {
 };
 
 const saveQRCodeImage = async (buffer, bookingId, driverId) => {
-    const fileName = `qr_booking_${bookingId}_${driverId}.png`;
-    const filePath = path.join(__dirname, "..", "public", "qr_codes", fileName);
+    const filePath = path.join("C:", "Users", "user", "Downloads",
+            "booking_qr", `qr_booking_${bookingId}_${driverId}.png`);
+
+    // Ensure directory exists
+    await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
 
     // Save image to disk
     await fs.promises.writeFile(filePath, buffer);
@@ -70,14 +73,14 @@ const saveQRCodeImage = async (buffer, bookingId, driverId) => {
             driver_id: parseInt(driverId),
             booking_id: parseInt(bookingId),
             qr_code_status: "0",
-            qr_code_image_path: `/public/qr_codes/${fileName}`
+            qr_code_image_path: filePath
         });
     } catch (err) {
         console.error("Failed to save QRCode:", err);
         throw err;
     }
 
-    return `/public/qr_codes/${fileName}`;
+    return filePath;
 };
 
 const getQRDetailsByBooking = async (bookingId) => {
@@ -98,20 +101,19 @@ const getQRDetailsByBooking = async (bookingId) => {
     }
 
     return qrEntries.map(entry => {
-        const qrPath = path.join(__dirname, "..", entry.qr_code_image_path);
-
         return {
             driver_id: entry.driver.driver_id,
             driver_name: entry.driver.driver_name,
             qr_status: entry.qr_code_status,
-            qr_path: qrPath
+            qr_path: entry.qr_code_image_path
         };
     });
 };
 
 const downloadQR = async (bookingId, driverId, res) => {
     try {
-        const qrPath = path.join(__dirname, "..", "public", "qr_codes", `qr_booking_${bookingId}_${driverId}.png`);
+        const qrPath = path.join("C:", "Users", "user", "Downloads",
+            "booking_qr", `qr_booking_${bookingId}_${driverId}.png`);
 
         if (!fs.existsSync(qrPath)) {
             return res.status(404).send({ message: "QR code file not found." });

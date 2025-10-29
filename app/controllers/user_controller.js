@@ -1,4 +1,5 @@
 const db = require("../models");
+const fs = require("fs");
 
 const UserAccount = db.UserAccount;
 
@@ -59,8 +60,7 @@ exports.updateProfile = async (req, res) => {
             address,
             city,
             postcode,
-            state,
-            attc_registration
+            state
         } = req.body;
 
         const account = await UserAccount.findByPk(accountId);
@@ -87,7 +87,17 @@ exports.updateProfile = async (req, res) => {
                 if (city) company.city = city;
                 if (postcode) company.postcode = postcode;
                 if (state) company.state = state;
-                if (attc_registration) company.attc_registration = attc_registration;
+                if (req.file) {
+                    const oldPath = company.attc_registration;
+                    const newPath = req.file.path;
+
+                    // Delete old file if it exists
+                    if (oldPath && fs.existsSync(oldPath)) {
+                        fs.unlinkSync(oldPath);
+                    }
+
+                    company.attc_registration = newPath;
+                }
                 await company.save();
             }
         }

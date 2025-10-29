@@ -1,5 +1,6 @@
 const controller = require("../controllers/auth_controller");
 const { authToken, verifyInput } = require("../middleware");
+const uploadFile = require("../middleware/uploadFile");
 
 module.exports = function(app) {
     app.use(function(req, res, next) {
@@ -11,7 +12,7 @@ module.exports = function(app) {
     });
 
     // Authentication and Registration Routes
-    app.post("/api/auth/signup", verifyInput.verifyUserDetails, controller.registerUser);
+    app.post("/api/auth/signup", uploadFile.single("attc_registration"), verifyInput.verifyUserDetails, controller.registerUser);
     app.post("/api/auth/signin/user", controller.signinUser);
     app.post("/api/auth/signin/port", controller.signinPort);
     app.get("/api/auth/signout", authToken.verifyToken, controller.signout);

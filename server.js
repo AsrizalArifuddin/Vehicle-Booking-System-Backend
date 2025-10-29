@@ -3,6 +3,7 @@
 const express = require("express");
 const cors = require("cors");
 const cookieSession = require("cookie-session");
+const multer = require("multer");
 
 const app = express();
 
@@ -37,6 +38,16 @@ require('./app/routes/approval_routes')(app);
 require('./app/routes/user_routes')(app);
 require('./app/routes/driver_routes')(app);
 require('./app/routes/booking_routes')(app);
+
+app.use((err, req, res, next) => {
+    if (err instanceof multer.MulterError) {
+        return res.status(400).json({ message: err.message });
+    } else if (err.message === "Only PDF files are allowed.") {
+        return res.status(400).json({ message: "Invalid file type. Only PDF files are allowed." });
+    } else {
+        return res.status(500).json({ message: "Something went wrong.", error: err.message });
+    }
+});
 
 // Start the server
 app.listen(port, () => {

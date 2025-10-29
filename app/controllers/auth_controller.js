@@ -32,19 +32,19 @@ exports.registerUser = async (req, res) => {
             city,
             company_name,
             registration_no,
-            sst_no,
-            attc_registration
+            sst_no
         } = req.body;
 
+        // Convert account_type to number
+        const type = parseInt(account_type);
+
         // Basic validation - Need Email, Password and Acc Type
-        if (!account_email || !account_password || account_type === undefined) {
+        if (!account_email || !account_password || isNaN(type)) {
             return res.status(400).send({ message: "Email, password, and account type are required." });
         }
 
-        // Most of the input validation is in middleware/verifyInput
-
         // Agent-specific validation
-        if (account_type === 0) {
+        if (type === 0) {
             if (!agent_fullname || id_type === undefined || !id_no
                 || !contact_no || !address || !state || !postcode || !city) {
                 return res.status(400).send({ message: "All agent fields are required." });
@@ -52,10 +52,11 @@ exports.registerUser = async (req, res) => {
         }
 
         // Company-specific validation
-        if (account_type === 1) {
+        if (type === 1) {
             if (!company_name || !registration_no || !sst_no || !contact_no
-                || !address || !state || !postcode || !city || !attc_registration) {
-                return res.status(400).send({ message: "All company fields are required." });
+                || !address || !state || !postcode || !city || !req.file) {
+                return res.status(400).send({
+                    message: "All company fields are required, including the ATTC registration PDF." });
             }
         }
 
@@ -63,7 +64,7 @@ exports.registerUser = async (req, res) => {
         let user; // For create user
 
         // Conditional creation - Agent
-        if (account_type === 0) {
+        if (type === 0) {
             // Create user account
             user = await UserAccount.create({
                 account_email,
@@ -102,7 +103,7 @@ exports.registerUser = async (req, res) => {
                 state,
                 postcode,
                 city,
-                attc_registration
+                attc_registration: req.file ? req.file.path : null
             });
         }
 
@@ -182,8 +183,8 @@ exports.signinPort = async (req, res) => {
                 id: account.port_account_id,
                 username: account.port_account_username,
                 email: account.port_account_email,
-                role: account.port_account_role //,
-                //token: token  //If want to check token
+                role: account.port_account_role,
+                token: token  //If want to check token
             };
 
             return res.status(200).send(response);
@@ -246,7 +247,7 @@ exports.signinUser = async (req, res) => {
             id: account.user_account_id,
             email: account.account_email,
             account_type: account.account_type, // 0 = agent, 1 = company
-            // token: token  //If want to check token
+            token: token  //If want to check token
         };
 
         return res.status(200).send(response);

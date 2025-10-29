@@ -2,8 +2,6 @@ const db = require("../models");
 
 const UserAccount = db.UserAccount;
 const PortAccount = db.PortAccount;
-const Driver = db.Driver;
-const Container = db.Container;
 
 const verifyPortDetails = async(req, res, next) => {
     try{
@@ -78,8 +76,7 @@ const verifyUserDetails = async(req, res, next) => {
             city,
             company_name,
             registration_no,
-            sst_no,
-            attc_registration
+            sst_no
         } = req.body;
 
         if(account_email){
@@ -101,7 +98,8 @@ const verifyUserDetails = async(req, res, next) => {
         }
 
         // Account Type must be 0 or 1
-        if (account_type && ![0, 1].includes(account_type)) {
+        const type = parseInt(account_type);
+        if (account_type && ![0, 1].includes(type)) {
             return res.status(400).send({ message: "Invalid account type. Must be 0 (agent) or 1 (company)." });
         }
 
@@ -166,10 +164,9 @@ const verifyUserDetails = async(req, res, next) => {
             }
         }
 
-        // Validate attc_registration - company only
-        if (attc_registration && attc_registration.length > 50) {
-            return res.status(400).send({ message: "ATTC registration must not exceed 50 characters." });
-        }
+        // if (req.file && req.file.mimetype !== "application/pdf") {
+        //     return res.status(400).send({ message: "Invalid file type. Only PDF files are allowed." });
+        // }
 
         next();
     } catch (err) {

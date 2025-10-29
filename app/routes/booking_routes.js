@@ -1,4 +1,4 @@
-const { authToken, verifyRoleOrID, verifyInput } = require("../middleware");
+const { authToken, verifyRoleOrID } = require("../middleware");
 const controller = require("../controllers/booking_controller");
 
 module.exports = function(app) {
