@@ -13,45 +13,53 @@ module.exports = function(app) {
     // Get driver list for booking form
     app.get("/api/booking/drivers",
         [authToken.verifyToken, authToken.isUserAccount],
-        controller.getDriverList);
+        controller.getDriverList
+    );
 
     // Create booking request
     app.post("/api/booking/create",
         [authToken.verifyToken, authToken.isUserAccount],
-        controller.createBooking);
+        controller.createBooking
+    );
 
     // Update booking
     app.put("/api/booking/update/:bookingId",
         [authToken.verifyToken, authToken.isUserAccount,
             verifyRoleOrID.verifyCorrectBookingID],
-        controller.updateBooking);
+        controller.updateBooking
+    );
 
     // Cancel Booking
     app.put("/api/booking/cancel/:bookingId",
         [authToken.verifyToken, authToken.isUserAccount,
             verifyRoleOrID.verifyCorrectBookingID],
-        controller.cancelBooking);
+        controller.cancelBooking
+    );
 
     // Port get pending booking requests
     app.get("/api/booking/pending",
         [authToken.verifyToken, authToken.isPortAccount],
-        controller.getPendingBookings);
+        controller.getPendingBookings
+    );
 
     // Port approve or reject booking request
     app.post("/api/booking/approval",
         [authToken.verifyToken, authToken.isPortAccount],
-        controller.approveOrRejectBooking);
+        controller.approveOrRejectBooking
+    );
 
     // User get booking list
     app.get("/api/booking/list",
         [authToken.verifyToken, authToken.isUserAccount],
-        controller.getBookingList);
+        controller.getBookingList
+    );
 
     // User get booking details
     app.get("/api/booking/details/:bookingId",
         [authToken.verifyToken, authToken.isUserAccount,
             verifyRoleOrID.verifyCorrectBookingID],
-        controller.getBookingDetails);
+        controller.getBookingDetails
+    );
 
     // Search bookings
     app.get("/api/booking/search",

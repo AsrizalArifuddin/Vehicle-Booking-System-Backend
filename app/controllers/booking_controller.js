@@ -6,7 +6,6 @@ const Agent = db.Agent;
 const Company = db.Company;
 const Driver = db.Driver;
 const Booking = db.Booking;
-const QRCode = db.QRCode;
 const Container = db.Container;
 const notificationService = require("../services/sendNotification");
 const qrService = require("../services/qrCodeGenerator")
@@ -147,7 +146,7 @@ exports.updateBooking = async (req, res) => {
             return res.status(400).send({ message: "Validation failed.", errors });
         }
 
-       // Booking field updates
+        // Booking field updates
         if (booking_date) booking.booking_date = booking_date;
         if (booking_type !== undefined) booking.booking_type = booking_type;
         await booking.save();
@@ -568,6 +567,7 @@ exports.viewApprovedBookingQR = async (req, res) => {
             return res.status(404).send({ message: "Approved booking not found." });
         }
 
+        // Retrieve QR code details from service
         const qrList = await qrService.getQRDetailsByBooking(bookingId);
 
         if (!qrList) { // Should not happen in approved booking

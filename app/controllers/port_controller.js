@@ -20,8 +20,6 @@ exports.addPortAccount = async (req, res) => {
             return res.status(400).send({ message: "All fields are required." });
         }
 
-        // Input validation is in middleware/verifyInput
-
         // Hash password
         const hashedPassword = bcrypt.hashSync(port_account_password, 8);
 
@@ -55,8 +53,6 @@ exports.updatePortAccount = async (req, res) => {
         // if (port_account_username && port_account_username !== account.port_account_username) {
         //      return res.status(400).send({ message: "Username cannot be changed." });
         // }
-
-        // Input validation is in middleware/verifyInput
 
         const accountId = req.params.portId;
         const account = await PortAccount.findByPk(accountId);
@@ -230,8 +226,6 @@ exports.updateAccountProfile = async (req, res) => {
         // if (port_account_username && port_account_username !== account.port_account_username) {
         //      return res.status(400).send({ message: "Username cannot be changed." });
         // }
-
-        // Input validation is in middleware/verifyInput
 
         // Prevent role change
         if (port_account_role && port_account_role !== account.port_account_role) {

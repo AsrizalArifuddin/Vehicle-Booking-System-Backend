@@ -216,20 +216,11 @@ const verifyDriverDetails = async(req, res, next) => {
     }
 };
 
-const verifyContainerDetails = async(req, res, next) => {
-    try{
-        
-        next();
-    } catch (err) {
-        return res.status(500).send({ message: "Error validating container input.", error: err.message });
-    }
-};
 
 const verifyInput = {
     verifyPortDetails,
     verifyUserDetails,
-    verifyDriverDetails,
-    verifyContainerDetails
+    verifyDriverDetails
 };
 
 module.exports = verifyInput;
