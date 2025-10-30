@@ -164,10 +164,6 @@ const verifyUserDetails = async(req, res, next) => {
             }
         }
 
-        // if (req.file && req.file.mimetype !== "application/pdf") {
-        //     return res.status(400).send({ message: "Invalid file type. Only PDF files are allowed." });
-        // }
-
         next();
     } catch (err) {
         return res.status(500).send({ message: "Error validating user input.", error: err.message });

@@ -56,7 +56,7 @@ exports.registerUser = async (req, res) => {
             if (!company_name || !registration_no || !sst_no || !contact_no
                 || !address || !state || !postcode || !city || !req.file) {
                 return res.status(400).send({
-                    message: "All company fields are required, including the ATTC registration PDF." });
+                    message: "All company fields are required." });
             }
         }
 
