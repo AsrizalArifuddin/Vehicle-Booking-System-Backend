@@ -58,7 +58,7 @@ const generateQRCode = async (qrCodeText) => {
 };
 
 const saveQRCodeImage = async (buffer, bookingId, driverId) => {
-    const filePath = path.join("C:", "Users", "user", "Downloads",
+    const filePath = path.join("C:", "Users", "user", "Downloads", "VBS_Testing",
             "booking_qr", `qr_booking_${bookingId}_${driverId}.png`);
 
     // Ensure directory exists
@@ -112,7 +112,7 @@ const getQRDetailsByBooking = async (bookingId) => {
 
 const downloadQR = async (bookingId, driverId, res) => {
     try {
-        const qrPath = path.join("C:", "Users", "user", "Downloads",
+        const qrPath = path.join("C:", "Users", "user", "Downloads", "VBS_Testing",
             "booking_qr", `qr_booking_${bookingId}_${driverId}.png`);
 
         if (!fs.existsSync(qrPath)) {
