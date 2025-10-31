@@ -3,6 +3,7 @@ const { Op } = require("sequelize");
 
 const UserAccount = db.UserAccount;
 const Driver = db.Driver;
+const EventLog = db.EventLog;
 
 exports.addDriver = async (req, res) => {
     try {
@@ -31,6 +32,17 @@ exports.addDriver = async (req, res) => {
             driver_id_no,
             driver_contact_no,
             truck_lpn
+        });
+
+        const now = new Date(); // Get current date-time
+
+        // Create event log
+        await EventLog.create({
+            created_at: now,
+            desc_log: `User Account ${userId} has added a new driver (ID: ${newDriver.driver_id}).`,
+            user_type: 0, // Not Port
+            user_id: userId,
+            event_type: 2 // creation
         });
 
         res.status(201).send({ message: "Driver added successfully.", data: newDriver });

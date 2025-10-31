@@ -1,5 +1,4 @@
 const { Container, Driver } = require("../models");
-const verifyInput = require("../middleware/verifyInput");
 
 // Shared helper functions -------------------------------------------------
 const isValidDriver = async (driver_id, userId) => {

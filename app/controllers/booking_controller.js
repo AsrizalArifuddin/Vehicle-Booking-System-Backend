@@ -2,11 +2,13 @@ const db = require("../models");
 const { Op } = require("sequelize");
 
 const UserAccount = db.UserAccount;
+const PortAccount = db.PortAccount;
 const Agent = db.Agent;
 const Company = db.Company;
 const Driver = db.Driver;
 const Booking = db.Booking;
 const Container = db.Container;
+const EventLog = db.EventLog;
 const notificationService = require("../services/sendNotification");
 const qrService = require("../services/qrCodeGenerator")
 const ContainerService = require("../services/containerService");
@@ -85,6 +87,17 @@ exports.createBooking = async (req, res) => {
         //     "New Booking Request",
         //     `A new booking has been submitted by ${req.user?.account_name || "Agent/Company"} for ${booking_date}.`,
         //     null);
+
+        const now = new Date(); // Get current date-time
+
+        // Create event log
+        await EventLog.create({
+            created_at: now,
+            desc_log: `User Account ${userId} has created a new booking (ID: ${newBooking.booking_id}).`,
+            user_type: 0, // Not Port
+            user_id: userId,
+            event_type: 2 // creation
+        });
 
         res.status(201).send({ message: "Booking request submitted successfully.", data: newBooking });
     } catch (err) {
@@ -422,7 +435,25 @@ exports.approveOrRejectBooking = async (req, res) => {
             : `Dear ${requesterName}, your booking ID: ${bookingId} has been rejected.`;
 
         // await notificationService.sendEmail(user.account_email, `Booking ${statusText}`, message, qrCodeBuffer);
-        await notificationService.sendEmail(user.account_email, `Booking ${statusText}`, message, qrCodeBuffers.map(q => q.buffer));
+        await notificationService.sendEmail(
+            user.account_email,
+            `Booking ${statusText}`,
+            message,
+            qrCodeBuffers.map(q => q.buffer));
+
+        const now = new Date();
+        const port = await PortAccount.findOne({ where: { port_account_id: req.accountId } });
+        const approverName = port ? port.port_account_username : "Unknown";
+        const approverId = port ? port.port_account_id : null;
+
+        // Create event log
+        await EventLog.create({
+            created_at: now,
+            desc_log: `Booking (ID: ${booking.booking_id}) from User Account ${booking.user_account_id} is "${statusText}" by ${approverName}`,
+            user_type: 1, // Port
+            user_id: approverId,
+            event_type: 1 // approval
+        });
 
         // Option 1
         // const qrCodeDataUrl = qrCodeBuffer

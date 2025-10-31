@@ -2,6 +2,8 @@ const db = require("../models");
 const notificationService = require("../services/sendNotification");
 
 const UserAccount = db.UserAccount;
+const PortAccount = db.PortAccount;
+const EventLog = db.EventLog;
 //const UserNotification = db.UserNotification;
 
 // Keep aside first - For send WhatsApp
@@ -84,7 +86,6 @@ exports.processDecision = async (req, res) => {
         } else {
             statusText = "Rejected"; // Treat both 2 and 3 as rejection
         }
-        //const now = new Date();
 
         // Keep aside first
         // await UserNotification.create({
@@ -103,6 +104,20 @@ exports.processDecision = async (req, res) => {
         // const contact_no = await getContactNo(user); //fetch from Agent or Company
         // await notificationService.sendWhatsApp(contact_no,
         //      `Your registration has been ${statusText}.`);
+
+        const now = new Date();
+        const port = await PortAccount.findOne({ where: { port_account_id: req.accountId } });
+        const approverName = port ? port.port_account_username : "Unknown";
+        const approverId = port ? port.port_account_id : null;
+
+        // Create event log
+        await EventLog.create({
+            created_at: now,
+            desc_log: `User Account ${user.user_account_id} is "${statusText}" by ${approverName}`,
+            user_type: 1, // Port
+            user_id: approverId,
+            event_type: 1 // approval
+        });
 
         res.status(200).send({ message: `User successfully "${statusText}".` });
     } catch (err) {

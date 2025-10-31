@@ -12,6 +12,7 @@ const UserAccount = db.UserAccount;
 const PortAccount = db.PortAccount;
 const Agent = db.Agent;
 const Company = db.Company;
+const EventLog = db.EventLog;
 //const UserNotification = db.UserNotification;
 //const PortNotification = db.PortNotification;
 
@@ -107,6 +108,17 @@ exports.registerUser = async (req, res) => {
             });
         }
 
+        const now = new Date(); // Get current date-time
+
+        // Create event log
+        await EventLog.create({
+            created_at: now,
+            desc_log: `User Account ${user.user_account_id} created`,
+            user_type: 0, // Not Port
+            user_id: user.user_account_id,
+            event_type: 2 // creation
+        });
+
         // Create notifications - Keep aside first
         //const now = new Date();
         //const desc = `New ${account_type === 0 ? "agent" : "company"} registration submitted.`;
@@ -187,6 +199,16 @@ exports.signinPort = async (req, res) => {
                 token: token  //If want to check token
             };
 
+            const now = new Date();
+            // Create event log
+            await EventLog.create({
+                created_at: now,
+                desc_log: `${account.port_account_username} has logged in.`,
+                user_type: 1, // Port
+                user_id: account.port_account_id,
+                event_type: 0 // authentication
+            });
+
             return res.status(200).send(response);
         } else {
             return res.status(404).send({ message: "Account not found." });
@@ -250,6 +272,16 @@ exports.signinUser = async (req, res) => {
             token: token  //If want to check token
         };
 
+        const now = new Date();
+        // Create event log
+        await EventLog.create({
+            created_at: now,
+            desc_log: `User Account ${account.user_account_id} has logged in.`,
+            user_type: 0, // User
+            user_id: account.user_account_id,
+            event_type: 0 // authentication
+        });
+
         return res.status(200).send(response);
     } catch (error) {
         return res.status(500).send({ message: error.message });
@@ -264,6 +296,26 @@ exports.signout = async (req, res) => {
         //     req.user?.account_email || req.user?.port_account_email || "Unknown email";
 
         // console.log("Account signed out:", email);
+        const now = new Date();
+        if (req.userType === "superadmin" || req.userType === "port") {
+            // Create event log
+            await EventLog.create({
+                created_at: now,
+                desc_log: `${req.user.port_account_username} has logged out.`,
+                user_type: 1, // Port
+                user_id: req.user.port_account_id,
+                event_type: 0 // authentication
+            });
+        } else {
+            // Create event log
+            await EventLog.create({
+                created_at: now,
+                desc_log: `User Account ${req.user.user_account_id} has logged out.`,
+                user_type: 0, // User
+                user_id: req.user.user_account_id,
+                event_type: 0 // authentication
+            });
+        }
 
         req.session = null;
         return res.status(200).send({ message: "You've been signed out!" });

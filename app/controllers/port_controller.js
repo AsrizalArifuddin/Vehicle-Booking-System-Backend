@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const { Op } = require("sequelize");
 
 const PortAccount = db.PortAccount;
+const EventLog = db.EventLog;
 
 // Add Port Account
 exports.addPortAccount = async (req, res) => {
@@ -30,6 +31,17 @@ exports.addPortAccount = async (req, res) => {
             port_account_password: hashedPassword, // or port_account_password (not hashed)
             port_contact_no,
             port_account_role
+        });
+
+        const now = new Date(); // Get current date-time
+
+        // Create event log
+        await EventLog.create({
+            created_at: now,
+            desc_log: `${req.user.port_account_username} has added a new port account (Name: ${newAccount.port_account_username}).`,
+            user_type: 1, // Port
+            user_id: req.accountId,
+            event_type: 2 // creation
         });
 
         res.status(201).send({ message: "Port account created successfully.", data: newAccount });

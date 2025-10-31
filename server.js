@@ -38,6 +38,7 @@ require('./app/routes/approval_routes')(app);
 require('./app/routes/user_routes')(app);
 require('./app/routes/driver_routes')(app);
 require('./app/routes/booking_routes')(app);
+require('./app/routes/event_routes')(app);
 
 app.use((err, req, res, next) => {
     if (err instanceof multer.MulterError) {
